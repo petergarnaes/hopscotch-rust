@@ -28,10 +28,25 @@ function compile_normal {
             echo "No tests to compile"
     fi
 }
+function compile_test {
+   if [ -f *-tests.rs ]; then
+        for v in *-tests.rs; do
+                echo $v --test
+                rustc $v &> /dev/null
+                if [[ $? -ne 0 ]]; then
+                    echo "$v failed to compile"
+                fi
+        done
+        else
+            echo "No tests to compile with --test"
+    fi
+ 
+}
+
 if [[ $1 = $atest ]]; then
     #If file exists
     cd test-files/
-    compile_normal
+    compile_test
     execute_normal
 else 
     if [[ $1 = $benchmark ]]; then
