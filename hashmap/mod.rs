@@ -50,7 +50,30 @@ impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> HashMap<K,V,H>{
 }
 
 impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> Container for HashMap<K,V,H>{
-    fn len(&self) -> uint {
-        // We lock the whole map
+    fn len(&self) -> uint {self.size}
+}
+
+impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> Map<K,V> for HashMap<K,V,H>{
+    fn find<'a>(&'a self, k: &K) -> Option<&'a V>{
+
+    }
+}
+impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> MutableMap<K,V> for HashMap<K,V,H>{
+    fn find_mut<'a>(&'a mut self,k: &K) -> Option<&'a mut V>{
+
+    }
+    fn swap(&mut self, k: K, v: V) -> Option<V> {
+
+    }
+    fn pop(&mut self, k: &K) -> Option<V>{
+
+    }
+}
+impl<K: Hash + Eq, V> HashMap<K, V>{
+    pub fn new() -> HashMap<K, V, SipHasher>{
+
+    }
+    pub fn with_capacity(capacity: uint) -> HashMap<K, V>{
+
     }
 }

@@ -34,4 +34,5 @@ fn bench_m(b: &mut BenchHarness) {
 
 
 fn main(){
+    println!("Running normally");
 }

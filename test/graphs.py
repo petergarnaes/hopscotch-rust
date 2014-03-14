@@ -12,6 +12,6 @@ inputY = testOutput[4].split()
 line_chart = pygal.Line(title=theTitle,x_title=xAxisTitle,y_title=yAxisTitle)
 line_chart.x_labels = inputX
 line_chart.add('Test',map(int,inputY))
-#Clean up prefix
-prefix = "a"
-line_chart.render_to_png('graph-pictures/'+prefix+'-graph.png')
+#Partitions filename to name the graph
+(directory,seperator,theFile) = filename.rpartition("/")
+line_chart.render_to_png('graph-pictures/'+theFile+'-graph.png')

@@ -1,22 +1,9 @@
 #!/bin/bash
 atest="test"
 benchmark="benchmark"
-if [[ $1 = $atest ]]; then
-    #If file exists
-    if [ -f test-files/*-tests.rs ]; then
-        for v in test-files/*-tests.rs; do
-                echo $v
-                rustc $v
-                if [[ $? -ne 0 ]]; then
-                    echo "$v failed to compile"
-                fi
-                mv $v "${$v}.ignore"
-        done
-        else
-            echo "No tests to compile"
-    fi
-    if [ -f test-files/*-tests ]; then
-	    for thing in test-files/*-tests
+function execute_normal {
+   if [ -f *-tests ]; then
+	    for thing in *-tests
             do
 		        ./$thing
 		        if [[ $? -ne 0 ]]; then
@@ -26,28 +13,50 @@ if [[ $1 = $atest ]]; then
 	    done
         else
             echo "No tests to run"
+    fi 
+}
+function compile_normal {
+   if [ -f *-tests.rs ]; then
+        for v in *-tests.rs; do
+                echo $v
+                rustc $v &> /dev/null
+                if [[ $? -ne 0 ]]; then
+                    echo "$v failed to compile"
+                fi
+        done
+        else
+            echo "No tests to compile"
     fi
+}
+if [[ $1 = $atest ]]; then
+    #If file exists
+    cd test-files/
+    compile_normal
+    execute_normal
 else 
     if [[ $1 = $benchmark ]]; then
+        echo "Entering benchmark-files/"
+        cd benchmark-files/
         #If file exists
-        if [ -f benchmark-files/*-tests.rs ]; then
+        compile_normal
+        execute_normal
+        if [ -f *-tests.rs ]; then
 		    echo "Compiling rust test ..."
-            for v in benchmark-files/*-tests.rs; do
-                rustc $v
+            for v in *-tests.rs; do
+                rustc --test $v &> /dev/null
                 #If error of any kind
                 if [[ $? -ne 0 ]]; then
                     echo "$v failed to compile.. Error: $?"
                 fi
-                mv $v "${v}.ignore"
             done
             else
                 echo "No tests to compile"
         fi
-
-        if [ -f benchmark-files/*-tests ]; then
+        if [ -f *-tests ]; then
 		    echo "Running test"
-		    for v in benchmark-files/*-tests; do
-                ./$v
+		    for v in *-tests; do
+                var=$(./$v --bench | grep -o "bench:[ \t]* [0-9]*" | awk '{print $2}')
+                echo $var >> output-files/$v
                 if [[ $? -ne 0 ]]; then
                     echo "$v program has an error"
                     exit 1
@@ -56,30 +65,28 @@ else
             else
                 echo "No test to run"
         fi
-
+        echo "Exiting benchmark-files/"
+        cd ../
 		latexfigure_start='\begin{figure}\includegraphics[scale=0.5]{'
 		latexfigure_end='}\end{figure}'
 	
 		#Outputs a .*-test-graph.png file for each test output
-        if [ -f benchmark-files/output-files/*-output ]; then
+        if [ -f benchmark-files/output-files/*-tests ]; then
 		    echo "Compiling graphs with python script..."
-            for file in benchmark-files/output-files/*-output 
+            for file in benchmark-files/output-files/*-tests 
                 do
 		            python graphs.py $file
             done
             else
                 echo "No output files to graph"
         fi
-		#Deletes last latex line containing \end{document}
 		echo "Starting latex editing"
+        #Copy latex-template to edit
 		cp latex-template.tex graphs.tex
-        #Doesn't work so just removed the line manually
-		sed '$d' < graphs.tex 1> /dev/null
 	
 		#appends each include graphics statment to the tex file
 		for graph in graph-pictures/*-graph.png 
             do
-                echo "Do we have a matchDo we have a match??"
 		        echo $latexfigure_start$graph$latexfigure_end>>graphs.tex
 		done
 	
@@ -90,6 +97,7 @@ else
 		pdflatex graphs.tex 1> /dev/null
 		echo "Cleaning up"
 		rm graphs.tex graphs.aux graphs.log
+        rm benchmark-files/y_fetch1 benchmark-files/y_fetch2 2> /dev/null
 		echo "Opening pdf for your pleasure!"
 		evince graphs.pdf
 	fi
