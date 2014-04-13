@@ -1,9 +1,13 @@
 use std::clone::Clone;
 use std::mem::replace;
+use std::cmp::max;
+use std::num;
 use std::default::Default;
 use std::vec::Vec;
 
 pub static VIRTUAL_BUCKET_CAPACITY: uint = 32;
+static INITIAL_LOG2_CAP: uint = 5;
+static INITIAL_CAPACITY: uint = 1 << INITIAL_LOG2_CAP; //2^5
 
 //Is not boxed, like structures are in Rust
 #[deriving(Show,Clone)]
@@ -23,9 +27,8 @@ pub struct RawTable<K,V>{
 }
 
 impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
-    pub fn new(capacity: uint) -> RawTable<K,V>{
-        //Assert capacity is power of two
-        assert!((capacity - 1) & capacity == 0);
+    pub fn new(cap: uint) -> RawTable<K,V>{
+        let capacity = num::next_power_of_two(max(INITIAL_CAPACITY,cap));
         let bucket_vec = Vec::from_elem(capacity,Bucket{hop_info:0,hash:0});
         let a:K = Default::default();
         let keys_vec = Vec::from_elem(capacity,a);
@@ -71,15 +74,19 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
     }
     pub fn resize(&mut self)->bool{
         // Check if table can be resized, return false if it can't
-        
+        let new_capacity = self.capacity << 1;
+        // Assert the shift doesn't overflow, aka the 1 has moved 'over the 
+        // edge'. We know this is alright, because it is initialized as a power
+        // of two.
+        assert!(new_capacity != 0);
         // Replace old table, replaces the value at a mutable location with a 
         // new one, returning the old value, without deinitializing or copying 
         // either one
-        let old_capacity = replace(&mut self.capacity,self.capacity << 1);
+        let old_capacity = replace(&mut self.capacity,new_capacity);
         let old_buckets = replace(&mut self.buckets,
                     Vec::from_elem(self.capacity,Bucket{hop_info:0,hash:0}));
         let a:K = Default::default();
-        let mut old_keys = replace(&mut self.keys,Vec::from_elem(self.capacity,a));
+        let old_keys = replace(&mut self.keys,Vec::from_elem(self.capacity,a));
         let b:V = Default::default();
         let old_vals = replace(&mut self.vals,Vec::from_elem(self.capacity,b));
         // Use old values to repopulate table
