@@ -1,5 +1,5 @@
 use std::clone::Clone;
-use std::cmp::Eq;
+use std::mem::replace;
 use std::default::Default;
 use std::vec::Vec;
 
@@ -13,7 +13,9 @@ pub struct Bucket{
 }
 
 pub struct RawTable<K,V>{
+    // Available elements
     capacity: uint,
+    // Occupied elements
     size:     uint,
     buckets:  Vec<Bucket>, //Contains hop info and hash
     keys:     Vec<K>,
@@ -22,6 +24,8 @@ pub struct RawTable<K,V>{
 
 impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
     pub fn new(capacity: uint) -> RawTable<K,V>{
+        //Assert capacity is power of two
+        assert!((capacity - 1) & capacity == 0);
         let bucket_vec = Vec::from_elem(capacity,Bucket{hop_info:0,hash:0});
         let a:K = Default::default();
         let keys_vec = Vec::from_elem(capacity,a);
@@ -65,7 +69,39 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
     pub fn insert_val(&mut self,idx:uint,elem:V){
         self.vals.insert(idx,elem)
     }
-    pub fn resize(&self,size:uint)->bool{
+    pub fn resize(&mut self)->bool{
+        // Check if table can be resized, return false if it can't
+        
+        // Replace old table, replaces the value at a mutable location with a 
+        // new one, returning the old value, without deinitializing or copying 
+        // either one
+        let old_capacity = replace(&mut self.capacity,self.capacity << 1);
+        let old_buckets = replace(&mut self.buckets,
+                    Vec::from_elem(self.capacity,Bucket{hop_info:0,hash:0}));
+        let a:K = Default::default();
+        let mut old_keys = replace(&mut self.keys,Vec::from_elem(self.capacity,a));
+        let b:V = Default::default();
+        let old_vals = replace(&mut self.vals,Vec::from_elem(self.capacity,b));
+        // Use old values to repopulate table
+        
+        // Holds which of the next virtual_bucket_size elements are full
+        let mut info:u32 = 0;
+        let old_mask = old_capacity - 1;
+        let new_mask = self.capacity - 1;
+        for bucket in old_buckets.iter(){
+            info = info | bucket.hop_info;
+            if info & 1 == 1 {
+                let old_address = (bucket.hash as uint) & old_mask;
+                let new_address = (bucket.hash as uint) & new_mask;
+                replace(&mut self.buckets.get(new_address),
+                                                old_buckets.get(old_address));
+                replace(&mut self.keys.get(new_address),
+                                                    old_keys.get(old_address));
+                replace(&mut self.vals.get(new_address),
+                                                    old_vals.get(old_address));
+            }
+            info = info >> 1;
+        }
         true
     }
     pub fn capacity(&self)->uint{
