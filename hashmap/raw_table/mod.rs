@@ -52,11 +52,11 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
     pub fn get_val<'a>(&'a self,idx:uint)->&'a V{
         self.vals.get(idx)
     }
-    pub fn remove_key(&mut self,idx:uint)->K{
-        let var = self.keys.remove(idx)
+    pub fn remove_key(&mut self,idx:uint)->Option<K>{
+        self.keys.remove(idx)
     }
-    pub fn remove_val(&mut self,idx:uint)->V{
-        let var = self.vals.remove(idx)
+    pub fn remove_val(&mut self,idx:uint)->Option<V>{
+        self.vals.remove(idx)
     }
     pub fn insert_key(&mut self,idx:uint,elem:K){
         self.keys.insert(idx,elem)
