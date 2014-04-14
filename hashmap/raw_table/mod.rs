@@ -52,19 +52,11 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
     pub fn get_val<'a>(&'a self,idx:uint)->&'a V{
         self.vals.get(idx)
     }
-    pub fn remove_key(&mut self,idx:uint)->bool{
-        let var = self.keys.remove(idx);
-        match var {
-            Some(_) => true,
-            None    => false
-        }
+    pub fn remove_key(&mut self,idx:uint)->K{
+        let var = self.keys.remove(idx)
     }
-    pub fn remove_val(&mut self,idx:uint)->bool{
-        let var = self.vals.remove(idx);
-        match var {
-            Some(_) => true,
-            None    => false
-        } 
+    pub fn remove_val(&mut self,idx:uint)->V{
+        let var = self.vals.remove(idx)
     }
     pub fn insert_key(&mut self,idx:uint,elem:K){
         self.keys.insert(idx,elem)
@@ -72,7 +64,7 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
     pub fn insert_val(&mut self,idx:uint,elem:V){
         self.vals.insert(idx,elem)
     }
-    pub fn resize(&mut self)->bool{
+    pub fn resize(&mut self){
         // Check if table can be resized, return false if it can't
         let new_capacity = self.capacity << 1;
         // Assert the shift doesn't overflow, aka the 1 has moved 'over the 
@@ -109,7 +101,6 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
             }
             info = info >> 1;
         }
-        true
     }
     pub fn capacity(&self)->uint{
         self.capacity
