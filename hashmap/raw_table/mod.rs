@@ -1,4 +1,5 @@
 use std::clone::Clone;
+use std::cmp::Eq;
 use std::mem::replace;
 use std::cmp::max;
 use std::num;
@@ -10,10 +11,10 @@ static INITIAL_LOG2_CAP: uint = 5;
 static INITIAL_CAPACITY: uint = 1 << INITIAL_LOG2_CAP; //2^5
 
 //Is not boxed, like structures are in Rust
-#[deriving(Show,Clone)]
+#[deriving(Show,Clone,Eq)]
 pub struct Bucket{
-    hop_info: u32,
-    hash:     u64
+    pub hop_info: u32,
+    pub hash:     u64
 }
 
 pub struct RawTable<K,V>{
@@ -43,8 +44,8 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
                   };
         ret
     }
-    pub fn get_virt_bucket<'a>(&'a mut self,idx:uint)->&'a mut [Bucket]{
-        self.buckets.mut_slice(idx,idx+VIRTUAL_BUCKET_CAPACITY)
+    pub fn get_bucket<'a>(&'a mut self,idx:uint)->&'a mut Bucket{
+        self.buckets.get_mut(idx)
     }
     pub fn get_key<'a>(&'a self,idx:uint)->&'a K{
         self.keys.get(idx)
@@ -109,11 +110,4 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
         self.size
     }
 
-}
-
-fn main(){
-    let mut v:Vec<Bucket> = Vec::with_capacity(10);
-    v.insert(0,Bucket{hop_info:12,hash:10});
-    let b = v.get(0);
-    println!("Sup?{}",b);
 }
