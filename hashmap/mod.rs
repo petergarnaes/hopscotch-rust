@@ -14,8 +14,8 @@ struct Bucket<K,V>{
     hop_info: uint,
     //Because rust implementation does it
     hash: uint,
-    key: K,
-    value: V,
+    key: ~K,
+    value: ~V,
     //Lock for multithreaded implementation
 }
 
@@ -27,6 +27,9 @@ pub struct HashMap<K,V,H = SipHasher>{
 }
 
 impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> HashMap<K,V,H>{
+    fn insert(&mut self,k: K,v: V){
+
+    }
     //Private help functions
     fn resize(&mut self){
         // Test if we shift correctly
