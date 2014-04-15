@@ -11,23 +11,23 @@ use std::vec::{Items, MutItems};
 // and cache size of the system later
 
 struct Bucket<K,V>{
-    priv hop_info: uint,
+    hop_info: uint,
     //Because rust implementation does it
     hash: uint,
-    key: *K,
-    value: *V,
     //Lock for multithreaded implementation
 }
 
 pub struct HashMap<K,V,H = SipHasher>{
     priv hasher: H,
     priv size: uint,
-    //maybe implement a Mask, which denotes the allocated size of the hashmap.
     // Option is needed because we have no null value
     priv buckets: Vec<Option<Bucket<K,V>>>
 }
 
 impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> HashMap<K,V,H>{
+    fn insert(&mut self,k: K,v: V){
+
+    }
     //Private help functions
     fn resize(&mut self){
     }

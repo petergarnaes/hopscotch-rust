@@ -74,7 +74,86 @@ For at vores HashMap er thread safe skal det have en metode som returnerer en
 pointer som er hverken er owned eller borrowed så folk kan kalde metoderne
 concurrently.
 
-10 april:
+15 marts:
+Lagde sidste hånd på den nyeste version af test frameworket. Det er et shell
+script som compiler og kører alle tests man gerne vil afprøve. Der er 2 
+hovedmapper, en til tests som tester ren funktionaliet, og en til benchmarking,
+hvor resultaterne bliver taget og puttet i en graf, så man kan se grafisk 
+hvordan implementationerne opfører sig. Der er et par regler som skal følges 
+for at shell scriptet kan bruge din test.
+
+16 marts:
+Kiggede på at køre Andersens kode igennem Rusts foreign code interface. Dette 
+er enormt fordelagtigt da vi således kan genbruge tests og benchmark metode til
+at plotte Andersens algoritme med det test framework vi har.
+C++ kode interfacer ikke direkte med Rust, det er måske muligt at interface 
+C++ med C, som dermed kan interface med Rust. Vi skal kun bruge enkelte 
+funktioner, så dette er måske realistisk. Andersens kode er rodet, så hvis 
+dette ikke lykkedes må vi finde på andre ting, evt. teste C hashmap.
+
+17 marts:
+Kiggede videre på C++ interface til C. Kiggede også på Option overhead, og med 
+meget simple tests kom frem til at patternmatche Option, derefere Some og 
+sammenligne i forhold til blot at sammenligne gøres på 70% af den tid det tager
+blot at sammenligne værdier.
+Dette er selvfølgelig væsenlig overhead, men samtidig er den nuværende linear 
+implementation som bruger sammenligning ikke helt stabil i følge programmøren.
+Måske skal et lignende men anderledes scheme udtænkes. Vi kan ihverfald 
+starte med option, og optimere derefter.
+
+Jeg har også gjort mig en masse overvejelser om konstruktionen af vores hashmap.
+For mig at se er den nye round robin rust hashmap optimeret på to måder:
+For det første undgår den Option, dog på en usikker måde. For det andet 
+allokerer den seperate vektorer til de forskellige værdier. Dette er en stor 
+fordel, da de 3 vektorer er ens indexeret. Men alligevel undgår han ikke at
+lave lookup i alle tre tabeller? Se f.eks. linje 261-304. Her indlæses 
+key og value ud fra et hash, og dette bruges hver gang Robin Hood algoritmen 
+skal indsætte et element. read og read_mut bruges også i inserts, da han 
+benytter sig kun af find_or_insert stuff. Det hjælper altså kun ved lookup, 
+hvor hvert hash hurtigt kan evalueres for et hit eller miss. Men ved inserts 
+koster denne løsning, da ombytning af elementer kræver lookups i forskellige 
+tabeller for at ombytte værdier, da de skal være ens indexeret.
+Removes må dog igen være billig hvis blot vi skal finde et hit, og fjerne det.
+Hvis der dog er nogen form for rebalancing så kan det dog igen være dyrt af 
+de samme grunde som for insert.
+En ting jeg undrer mig over er hvorfor 8 hash værdier af typen 64u giver kun 
+2 chache hits. Min pc har 32k = 32768? hvilket giver plads til 512 værdier.
+JYRKI SPØRGSMÅL!!
+
+18 marts:
+Efter at have tænkt videre foreslår jeg vi prøver en lidt anden tilgang. I 
+stedet for at gøre som deres implementation og dele det op i 3 vektorer, 
+foreslår jeg at vi laver en vektor med hop info, hash, og de to pointere.
+Dette foreslår jeg fordi dette giver cashe locality i alle tilfælde, både 
+insert, remove og lookup så frem at vi forstår cashe størrelser rigtigt. 
+Hvis selv disse væsentlig større data strukturer passer ind således at vi 
+kan have nok elementer i et cashe hit til at vi kan se hele den virtuelle 
+bucket i 2 cashe hits. Det er selvfølgelig den vi har haft planer om hele 
+tiden, men nu er jeg ihvertfald mere overbevist om at vores tilgang giver 
+mening ud fra den viden vi har.
+Speed up ved vores tilgang til algoritmen kommer i at vi i stedet for at 
+indsætte nøgle og værdi i et specielt allokeret array, blot tager ejerskab af
+værdierne. Således bliver de ikke frigjordt. Dette sparer tid, da vi ikke skal 
+klone værdierne for at indsætte dem, og smide den oprindelige klon væk når den 
+går "out of scope". Vi skal dog lige undersøge hvordan vi så dropper dem 
+igen, når vi dropper hash tabellen.
+Prisen er at vi må leve med at elementerne ikke nødvendigvis er optimalt gemt i 
+hukommelsen, men kan være word alligned. Strings er dog en undtagelse for 
+Robin Hood også, så dette gælder kun structures som ikke er word alligned, 
+hvilket vi regner for sjældent.
+Hvis vores insert modtager owned pointers, ved vi at de er allokeret på heap,
+og vi skal bare beholde ejerskabet, og destruere dem korrekt.
+
+Efter at havet rodet med koden i et stykke tid, fremkommer det en anelse 
+urealistisk at skulle programmere hele hashmappet til at have den fulde API
+når vi kun er to utrænede dataloger.
+
+Der må være en mulighed for at undgå option når vi har hop_info... 
+Problemet bliver så bare at vi ikke må have null pointere, og jo mere jeg ser 
+på optimeringer jo mere handler det om at kunne bryde Rusts regler... En del 
+af vores projekt er vel at udvikle på Rusts præmisse, så vi må være kreative.
+
+10 apil:
 Antal af cache lines der hives ind for et lookup som der skal alle elementer 
 i en virtuel bucket igennem:
 ______________________________
