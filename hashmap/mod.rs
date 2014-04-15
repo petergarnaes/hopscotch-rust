@@ -14,8 +14,6 @@ struct Bucket<K,V>{
     hop_info: uint,
     //Because rust implementation does it
     hash: uint,
-    key: ~K,
-    value: ~V,
     //Lock for multithreaded implementation
 }
 
@@ -32,22 +30,6 @@ impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> HashMap<K,V,H>{
     }
     //Private help functions
     fn resize(&mut self){
-        // Test if we shift correctly
-        let new_size = self.size << 1;
-        
-        let old_buckets = replace(&mut self.buckets,Vec::from_fn(new_size,
-                                    |_| None));
-        //Will be incremented when we insert new values
-        self.size = 0;
-        for buckets in old_buckets.move_iter(){
-            match bucket {
-                Some(Bucket{hash: hash,key: key,value: value}) => {
-                    self.insert_bucket(hash,key,value)
-                },
-                None => {}
-            }
-            self.insert_bucket(bucket);
-        }
     }
     fn insert_bucket(&mut self,)
 }

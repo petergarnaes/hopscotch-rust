@@ -1,0 +1,168 @@
+10 marts:
+Vi skal ftnde ud af om Rust threads er anderledes håndteret end POSIX threads?
+Spawner POSIX threads en ny proces? Vi kan jo nok kalde Andersens bibliotek 
+igennem Rust med det der foreign library interface, og få den samme slags
+threading og dermed de samme resultater. Men vi skal bare være forsigtig med 
+hvordan vi formulerer os om dens multi thread egenskaber.
+
+Vi kunne også overveje at have en branch uden locks, og på den måde teste lock
+overhead af Rust locks.
+
+Vi må også udnytte synchronization featuren til at starte alle test threads 
+samtidigt.
+
+I dag har vi undrsøgt hvordan man skal arbejde med shared mutable state i 
+Rust. Rusts type system beskytter dig imod dette normalt, ved ikke at tillade
+funktioner at returnere andet end en ejet pointer. Hvis en lånt pointer 
+returneres er det fordi den peger ind i en datastruktur som du har givet 
+funktionen som argument. Hvorfor er dette sikkert? 
+- Hvis man returnerer en owned
+pointer så har vi kun en reference til det sted i hukommelsen, hvilket er 
+sikkert. Grunden til at vi kan returnere en pointer og at den pointer ikke
+er "out of scope" når funktionen afslutter er fordi Rust er smart og kan 
+"infere" at det vi allokerer noget som returneres, og derfor gør den det så det
+ikke bliver frigjort. 
+- Det er også sikkert at returnere en reference men kun hvis den referer
+til noget i en datastruktur vi har modtaget som argument. det er fordi at vi 
+ved at når funktionen bliver kaldt så har vi lånt objektet vi kalder med, og 
+derfor er dens scope størrere end funktionen. Vi kan derfor returnere det 
+lånte objekt eller en del af det, uden at forbryde os mod memory safety. 
+Hvorfor kan man ikke returnere en lånt pointer ellers? Fordi hvis den er lånt 
+tilskriver man sig ikke ejerskab, og når selve den lånte pointer går "out of 
+scope" så bliver det den pejer på ikke frigjort. At returnere en lånt pointer 
+til noget allokeret inde i funktionen giver ikke mening, fordi den lånte 
+pointer vil pege på noget som er frigjort efter funktionen.
+
+Hvordan beskytter det dig mod race conditions? Fordi man ikke kan have 
+adskillige referencer til det samme hukommelse, uden at bruge sikre biblioteks
+metoder. To processer kan altså ikke referere til det samme hukommelse uden et 
+bibliotek. Hvordan er biblioteket sikkert? Fordi den er "atomically reference 
+counted", dvs. holder styr på hvor mange referencer der er til den del af 
+hukommelsen. Således kan hukommelse ikke frigøres hvis pointere til den eksister. 
+Biblioteket bruger i virkeligheden "unsafe" kode, i det de 
+returnerer en pointer til dataen som hverken er owned eller borrowed, og 
+derfor ingen beskyttelse har. Man kan derfor kalde dens funktioner, som vha. 
+locks er thread safe. I tilfælde af ARC returneres kun "immutable" references 
+som er thread safe i det du så kun kan aflæse, eller kalde metoder som ikke 
+kræver at man har mutable rettigheder på objektet. Ved kald af Drop på en 
+pointer returneret fra ARC (når pointer løber ud af scope) så decrementerer
+ARC antallet af pointere som referer til den, og når tallet når 0 kan den selv 
+droppes.
+
+Nogle metoder kræver omvendt mutate rettigheder hvis de ændrer objektet, 
+hvilket igen er umuligt at undgå med Rusts type system, da hver metode som 
+argument modtager self. Hvis metoden skal læse/skrive sig selv, SKAL den kalde 
+self, og da self ikke kan skrives uden mutable rettigheder kan vi ikke 
+skrive/ændre objektet uden mutable rettigheder.
+
+Så for at opsummere: Man kan ikke med Rusts typesystem ikke have mere end en
+reference til et objekt, og med den reference vil man aldrig kunne skrive/ændre
+i uden mutable rettigheder. Så ARC behøves blot at sørge for at objektet den 
+wrapper ikke frigøres så længe nogle peger på den. Dette gør den blot med en 
+simpel counter. I det den returnerer en pointer til et immutable objekt, vil 
+typesystemet sørge for at intet i objektet kan skrives/ændres.
+
+Rust tvinger dig altså til virkelig at overveje hvilke resourcer tilhører hvem,
+og hvorvidt du har brug for at læse/ændre dem. Disse tvugne overvejelser 
+passer godt ind i concurrency modellen, hvor man igen må gøre sig nøje 
+overvejelser om hvilke resourcer tilhører hvem.
+Ender man med at køre "unsafe" kode og bryde reglerne, er det forhåbenligt et 
+meget begrænset mængde kode der kan forvolde problemer, og som man nemmere kan 
+fikse.
+
+For at vores HashMap er thread safe skal det have en metode som returnerer en
+pointer som er hverken er owned eller borrowed så folk kan kalde metoderne
+concurrently.
+
+<<<<<<< HEAD
+14 marts:
+Lagde sidste hånd på den nyeste version af test frameworket. Det er et shell
+script som compiler og kører alle tests man gerne vil afprøve. Der er 2 
+hovedmapper, en til tests som tester ren funktionaliet, og en til benchmarking,
+hvor resultaterne bliver taget og puttet i en graf, så man kan se grafisk 
+hvordan implementationerne opfører sig. Der er et par regler som skal følges 
+for at shell scriptet kan bruge din test.
+
+16 marts:
+Kiggede på at køre Andersens kode igennem Rusts foreign code interface. Dette 
+er enormt fordelagtigt da vi således kan genbruge tests og benchmark metode til
+at plotte Andersens algoritme med det test framework vi har.
+C++ kode interfacer ikke direkte med Rust, det er måske muligt at interface 
+C++ med C, som dermed kan interface med Rust. Vi skal kun bruge enkelte 
+funktioner, så dette er måske realistisk. Andersens kode er rodet, så hvis 
+dette ikke lykkedes må vi finde på andre ting, evt. teste C hashmap.
+
+17 marts:
+Kiggede videre på C++ interface til C. Kiggede også på Option overhead, og med 
+meget simple tests kom frem til at patternmatche Option, derefere Some og 
+sammenligne i forhold til blot at sammenligne gøres på 70% af den tid det tager
+blot at sammenligne værdier.
+Dette er selvfølgelig væsenlig overhead, men samtidig er den nuværende linear 
+implementation som bruger sammenligning ikke helt stabil i følge programmøren.
+Måske skal et lignende men anderledes scheme udtænkes. Vi kan ihverfald 
+starte med option, og optimere derefter.
+
+Jeg har også gjort mig en masse overvejelser om konstruktionen af vores hashmap.
+For mig at se er den nye round robin rust hashmap optimeret på to måder:
+For det første undgår den Option, dog på en usikker måde. For det andet 
+allokerer den seperate vektorer til de forskellige værdier. Dette er en stor 
+fordel, da de 3 vektorer er ens indexeret. Men alligevel undgår han ikke at
+lave lookup i alle tre tabeller? Se f.eks. linje 261-304. Her indlæses 
+key og value ud fra et hash, og dette bruges hver gang Robin Hood algoritmen 
+skal indsætte et element. read og read_mut bruges også i inserts, da han 
+benytter sig kun af find_or_insert stuff. Det hjælper altså kun ved lookup, 
+hvor hvert hash hurtigt kan evalueres for et hit eller miss. Men ved inserts 
+koster denne løsning, da ombytning af elementer kræver lookups i forskellige 
+tabeller for at ombytte værdier, da de skal være ens indexeret.
+Removes må dog igen være billig hvis blot vi skal finde et hit, og fjerne det.
+Hvis der dog er nogen form for rebalancing så kan det dog igen være dyrt af 
+de samme grunde som for insert.
+En ting jeg undrer mig over er hvorfor 8 hash værdier af typen 64u giver kun 
+2 chache hits. Min pc har 32k = 32768? hvilket giver plads til 512 værdier.
+JYRKI SPØRGSMÅL!!
+
+18 marts:
+Efter at have tænkt videre foreslår jeg vi prøver en lidt anden tilgang. I 
+stedet for at gøre som deres implementation og dele det op i 3 vektorer, 
+foreslår jeg at vi laver en vektor med hop info, hash, og de to pointere.
+Dette foreslår jeg fordi dette giver cashe locality i alle tilfælde, både 
+insert, remove og lookup så frem at vi forstår cashe størrelser rigtigt. 
+Hvis selv disse væsentlig større data strukturer passer ind således at vi 
+kan have nok elementer i et cashe hit til at vi kan se hele den virtuelle 
+bucket i 2 cashe hits. Det er selvfølgelig den vi har haft planer om hele 
+tiden, men nu er jeg ihvertfald mere overbevist om at vores tilgang giver 
+mening ud fra den viden vi har.
+Speed up ved vores tilgang til algoritmen kommer i at vi i stedet for at 
+indsætte nøgle og værdi i et specielt allokeret array, blot tager ejerskab af
+værdierne. Således bliver de ikke frigjordt. Dette sparer tid, da vi ikke skal 
+klone værdierne for at indsætte dem, og smide den oprindelige klon væk når den 
+går "out of scope". Vi skal dog lige undersøge hvordan vi så dropper dem 
+igen, når vi dropper hash tabellen.
+Prisen er at vi må leve med at elementerne ikke nødvendigvis er optimalt gemt i 
+hukommelsen, men kan være word alligned. Strings er dog en undtagelse for 
+Robin Hood også, så dette gælder kun structures som ikke er word alligned, 
+hvilket vi regner for sjældent.
+Hvis vores insert modtager owned pointers, ved vi at de er allokeret på heap,
+og vi skal bare beholde ejerskabet, og destruere dem korrekt.
+
+Efter at havet rodet med koden i et stykke tid, fremkommer det en anelse 
+urealistisk at skulle programmere hele hashmappet til at have den fulde API
+når vi kun er to utrænede dataloger.
+
+Der må være en mulighed for at undgå option når vi har hop_info... 
+Problemet bliver så bare at vi ikke må have null pointere, og jo mere jeg ser 
+på optimeringer jo mere handler det om at kunne bryde Rusts regler... En del 
+af vores projekt er vel at udvikle på Rusts præmisse, så vi må være kreative.
+=======
+10 apil:
+Antal af cache lines der hives ind for et lookup som der skal alle elementer 
+i en virtuel bucket igennem:
+______________________________
+| Antal buckets | cache lines |
+|      16       |     4       |
+|      32       |     8       |
+|      64       |    16       |
+______________________________
+
+
+>>>>>>> 3b6256c04f1c8e469d9c8f3cca255a904f92009d

@@ -1,5 +1,5 @@
 10 marts:
-Vi skal ftnde ud af om Rust threads er anderledes håndteret end POSIX threads?
+Vi skal finde ud af om Rust threads er anderledes håndteret end POSIX threads?
 Spawner POSIX threads en ny proces? Vi kan jo nok kalde Andersens bibliotek 
 igennem Rust med det der foreign library interface, og få den samme slags
 threading og dermed de samme resultater. Men vi skal bare være forsigtig med 
@@ -74,7 +74,7 @@ For at vores HashMap er thread safe skal det have en metode som returnerer en
 pointer som er hverken er owned eller borrowed så folk kan kalde metoderne
 concurrently.
 
-14 marts:
+15 marts:
 Lagde sidste hånd på den nyeste version af test frameworket. Det er et shell
 script som compiler og kører alle tests man gerne vil afprøve. Der er 2 
 hovedmapper, en til tests som tester ren funktionaliet, og en til benchmarking,
@@ -151,4 +151,18 @@ når vi kun er to utrænede dataloger.
 Der må være en mulighed for at undgå option når vi har hop_info... 
 Problemet bliver så bare at vi ikke må have null pointere, og jo mere jeg ser 
 på optimeringer jo mere handler det om at kunne bryde Rusts regler... En del 
+
 af vores projekt er vel at udvikle på Rusts præmisse, så vi må være kreative.
+=======
+10 apil:
+Antal af cache lines der hives ind for et lookup som der skal alle elementer 
+i en virtuel bucket igennem:
+______________________________
+| Antal buckets | cache lines |
+|      16       |     4       |
+|      32       |     8       |
+|      64       |    16       |
+______________________________
+
+
+>>>>>>> 3b6256c04f1c8e469d9c8f3cca255a904f92009d
