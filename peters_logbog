@@ -74,7 +74,7 @@ For at vores HashMap er thread safe skal det have en metode som returnerer en
 pointer som er hverken er owned eller borrowed så folk kan kalde metoderne
 concurrently.
 
-10 apil:
+10 april:
 Antal af cache lines der hives ind for et lookup som der skal alle elementer 
 i en virtuel bucket igennem:
 ______________________________
@@ -84,4 +84,5 @@ ______________________________
 |      64       |    16       |
 ______________________________
 
-
+13 april:
+Raw table begyndt, vi kan snart have et eksperimentielt hash table klar.

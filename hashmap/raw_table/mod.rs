@@ -21,7 +21,6 @@ pub struct RawTable<K,V>{
     // Available elements
     capacity: uint,
     // Occupied elements
-    size:     uint,
     buckets:  Vec<Bucket>, //Contains hop info and hash
     keys:     Vec<K>,
     vals:     Vec<V>
@@ -37,7 +36,6 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
         let vals_vec = Vec::from_elem(capacity,b);
         let ret = RawTable{
                       capacity: capacity,
-                      size: 0,
                       buckets: bucket_vec,
                       keys: keys_vec,
                       vals: vals_vec
@@ -93,12 +91,12 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
             if info & 1 == 1 {
                 let old_address = (bucket.hash as uint) & old_mask;
                 let new_address = (bucket.hash as uint) & new_mask;
-                replace(&mut self.buckets.get(new_address),
-                                                old_buckets.get(old_address));
-                replace(&mut self.keys.get(new_address),
-                                                    old_keys.get(old_address));
-                replace(&mut self.vals.get(new_address),
-                                                    old_vals.get(old_address));
+                replace(self.buckets.get_mut(new_address),
+                                                *old_buckets.get(old_address));
+                replace(self.keys.get_mut(new_address),
+                                                old_keys.get(old_address).clone());
+                replace(self.vals.get_mut(new_address),
+                                                old_vals.get(old_address).clone());
             }
             info = info >> 1;
         }
@@ -106,8 +104,4 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
     pub fn capacity(&self)->uint{
         self.capacity
     }
-    pub fn size(&self)->uint{
-        self.size
-    }
-
 }
