@@ -49,6 +49,7 @@ mod test_raw_table{
     #[test]
     fn test_remove(){
         let mut m:RawTable<uint,uint> = RawTable::new(120);
+        assert!(m.capacity() == 128);
         for i in range(0u,m.capacity()){
             m.insert_key(i,i);
             m.insert_val(i,i);
