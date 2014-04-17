@@ -7,13 +7,12 @@ use collections::HashMap;
 use sync::RWArc;
 
 fn setup_hashmap(n: uint, m: uint) -> HashMap<uint, uint>{
-	let mut retval = HashMap::with_capacity(n);
-	let mut b = m.clone();
-	for p in (1u, b){
-		retval.insert(12, 10);
+	let mut retval = HashMap::with_capacity(12u);
+	let mut b = 12u;
+	for p in range(1u, b){
+		retval.insert(12u, 10u);
 	};
-	
-	return retval;
+	retval
 }
 
 fn bob(){

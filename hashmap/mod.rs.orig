@@ -4,6 +4,7 @@ use std::clone::Clone;
 use std::hash::{Hash, Hasher, sip};
 use std::mem::replace;
 use std::num;
+<<<<<<< HEAD
 use std::option::{Option, Some, None};
 mod raw_table;
 
@@ -15,14 +16,34 @@ pub struct HashMap<K, V, H>{
     hasher: sip::SipHasher,
     raw_table: raw_table::RawTable<K,V>,
 	size: uint
+=======
+use std::rand::Rng;
+use std::vec::{Items, MutItems};
 
 // Lets begin with an H=32 and find out later how we determine the bit size
 // and cache size of the system later
 
+struct Bucket<K,V>{
+    hop_info: uint,
+    //Because rust implementation does it
+    hash: uint,
+    //Lock for multithreaded implementation
+}
+
+pub struct HashMap<K,V,H = SipHasher>{
+    priv hasher: H,
+    priv size: uint,
+    // Option is needed because we have no null value
+    priv buckets: Vec<Option<Bucket<K,V>>>
+>>>>>>> 72e3698a8e8975d9b23afec7d5b3918abf8f0715
 }
 
 impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> HashMap<K,V,H>{
+    fn insert(&mut self,k: K,v: V){
+
+    }
     //Private help functions
+	//increment size ved insert
 
 	//hust at decrement size ved remove
     fn remove(&mut self, K: key)->Option<V>{
