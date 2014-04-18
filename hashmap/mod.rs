@@ -160,6 +160,12 @@ self.raw_table.get_key(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + move_free_d
 		resize();
 		return insert(key, data);
     }
+    pub fn getRawTable(&mut self)->&mut raw_table::RawTable{
+        &mut self.raw_table
+    }
+    pub fn getSipHasher(&self)->&SipHasher{
+        &self.hasher
+    }
 
 }
 
