@@ -8,8 +8,9 @@ mod raw_table;
 mod test_hopscotch{
     //use std::hash::{Hash,Hasher,sip};
     //use collections::hashmap::HashMap;
+    extern crate rand;
     use super::hopscotch::{HashMap};
-    use super::raw_table::VIRTUAL_BUCKET_SIZE;
+    use super::raw_table::VIRTUAL_BUCKET_CAPACITY;
 
     #[test]
     fn test_lookup_without_insert(){
@@ -65,7 +66,7 @@ mod test_hopscotch{
             } else {
                 let hit = false;
                 let info = r.get_bucket(raw_address).hop_info;
-                for i in range(1u,VIRTUAL_BUCKET_SIZE-1){
+                for i in range(1u,VIRTUAL_BUCKET_CAPACITY-1){
                      if info & 1 == 1{
                             if r.get_key(raw_address+i) == key{
                                 hit = true;
