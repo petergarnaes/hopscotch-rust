@@ -155,21 +155,16 @@ self.raw_table.get_key(((index_addr - (self.VIRTUAL_BUCKET_CAPACITY-1)) + move_f
 			(free_distance, val) = self.find_closer_bucket(free_distance, index_addr, val, mask);
 			}
 		}
-<<<<<<< HEAD
 		self.raw_table.resize();
 		return self.insert(key, data);
     } 
-=======
-		resize();
-		return insert(key, data);
-    }
+  
     pub fn getRawTable(&mut self)->&mut raw_table::RawTable{
         &mut self.raw_table
     }
-    pub fn getSipHasher(&self)->&SipHasher{
+    pub fn getSipHasher(&self)->&sip::SipHasher{
         &self.hasher
     }
->>>>>>> c0e1c35a6ec974b8098c663d8d4c4105a2c88c33
 
 }
 

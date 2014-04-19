@@ -118,8 +118,7 @@ self.raw_table.get_key(((index_addr - (self.VIRTUAL_BUCKET_CAPACITY-1)) + move_f
 	//the current key exist or not.
 
 	pub fn check_key(&mut self, key:K)->bool{
-		let x = lookup(key);
-		match x {
+		match self.lookup(key) {
 			Some(_) => return true,
 			None => return false
 		}
@@ -159,6 +158,13 @@ self.raw_table.get_key(((index_addr - (self.VIRTUAL_BUCKET_CAPACITY-1)) + move_f
 		self.raw_table.resize();
 		return self.insert(key, data);
     } 
+  
+    pub fn getRawTable(&mut self)->&mut raw_table::RawTable{
+        &mut self.raw_table
+    }
+    pub fn getSipHasher(&self)->&sip::SipHasher{
+        &self.hasher
+    }
 
 }
 
