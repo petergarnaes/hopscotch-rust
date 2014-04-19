@@ -166,6 +166,13 @@ self.raw_table.get_key(((index_addr - (self.VIRTUAL_BUCKET_CAPACITY-1)) + move_f
         &self.hasher
     }
 
+    pub fn new(&mut self) -> HashMap<K, V>{
+		return self.raw_table.new(100);
+    }
+    pub fn with_capacity(&mut self, capacity: uint) -> HashMap<K, V>{
+		return self.raw_table.new(capacity);
+    }
+
 }
 
 impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> Map<K,V> for HashMap<K,V,H>{
@@ -181,10 +188,5 @@ impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> MutableMap<K,V> for HashMap<K,V,H>{
   
 }
 impl<K: Hash + Eq, V> HashMap<K, V>{
-    pub fn new() -> HashMap<K, V, sip::SipHasher>{
 
-    }
-    pub fn with_capacity(capacity: uint) -> HashMap<K, V>{
-
-    }
 }
