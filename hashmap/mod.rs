@@ -170,6 +170,7 @@ self.raw_table.get_key(((index_addr - (self.VIRTUAL_BUCKET_CAPACITY-1)) + move_f
 		self.raw_table.new(100);	
 		return self;
     }
+
     pub fn with_capacity(&mut self, capacity: uint) -> HashMap<K, V>{
 		self.raw_table.new(capacity);
 		return self;
