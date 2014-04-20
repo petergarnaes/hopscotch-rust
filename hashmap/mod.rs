@@ -29,8 +29,8 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
     //Private help functions
 
 	//hust at decrement size ved remove
-    pub fn remove(&mut self, key:&K)->Option<&V>{
-		let new_hash = self.hasher.hash(key);
+    pub fn remove(&mut self, key:K)->Option<&V>{
+		let new_hash = self.hasher.hash(&key);
 		let mask = self.raw_table.capacity()-1;
 		let index_addr: uint = 0;
 		match new_hash.to_uint(){
@@ -61,7 +61,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 	//lookup - Lookups an item through the key and returns an Option:
 	// Some(item) if found, None if not found.
     pub fn lookup(&self, key:K)->Option<&V>{
-        let new_hash = self.hasher.hash(key);
+        let new_hash = self.hasher.hash(&key);
         let mask = self.raw_table.capacity()-1;
 		let index_addr: uint = 0;
 		match new_hash.to_uint(){
@@ -90,7 +90,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 
 
 	//used to displace a bucket nearer to the start_bucket of insert()
-	pub fn find_closer_bucket(&mut self, free_distance:int, index_addr:uint, val:int, mask:uint)->(int, int){
+	pub fn find_closer_bucket(&mut self, free_distance:uint, index_addr:uint, val:int, mask:uint)->(uint, int){
 		let mut move_bucket = self.raw_table.get_bucket((index_addr - (self.VIRTUAL_BUCKET_CAPACITY-1)) & mask);
 		let mut free_dist = VIRTUAL_BUCKET_CAPACITY-1;
 		while(0 < free_dist){
@@ -107,6 +107,11 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 		if(move_free_distance != -1){
 			if(start_hop_info == move_bucket.hopinfo){
 				move_bucket.hopinfo = (move_bucket.hopinfo | (1<< free_dist));
+
+				// Vi har et problem med pointers her. raw_table.get_val returnere en
+				// &data og ikke en data. For at kunne gøre dette skal dette derefereres.
+				// dette gælder for insert af key og value.
+
 				//inserts the data of the newly found bucket into the old one
 				self.raw_table.insert_val(index_addr,
 self.raw_table.get_val(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + move_free_distance) & mask));
@@ -115,7 +120,7 @@ self.raw_table.get_val(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + move_free_d
 self.raw_table.get_key(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + move_free_distance) & mask));
 
 				move_bucket.hopinfo = move_bucket.hopinfo & -(1<<move_free_distance);
-				return (free_distance - free_dist, val);
+				return ((free_distance - free_dist), val);
 				}
 			}
 		}
@@ -134,7 +139,7 @@ self.raw_table.get_key(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + move_free_d
 		}
 	}
     pub fn insert(&mut self, key:K, data:V)-> bool{
-		let new_hash = self.hasher.hash(key);
+		let new_hash = self.hasher.hash(&key);
 		let mask = self.raw_table.capacity()-1;
 		let index_addr: uint = 0;
 		match new_hash.to_uint(){
@@ -147,11 +152,11 @@ self.raw_table.get_key(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + move_free_d
 			return false
 		}
 
-		let mut free_distance = 0;
+		let mut free_distance = 0u;
 		let mut val = 1;
 		for i in range(0,  ADD_RANGE){
-			let check_key = self.get_key((index_addr+i) & mask);
-			if(check_key = Default::default()){
+			let check_key = self.raw_table.get_key((index_addr+i) & mask);
+			if(check_key == Default::default()){
 				break;
 			}
 			free_distance += 1;
@@ -161,12 +166,12 @@ self.raw_table.get_key(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + move_free_d
 			while(val != 0){
 				if(free_distance < VIRTUAL_BUCKET_CAPACITY){
 					start_bucket.hopinfo = start_bucket.hopinfo | (1<<free_distance);
-					self.raw_table.insert_key((index_addr + free_distance, key) & mask);
-					self.raw_table.insert_val((index_addr + free_distance, data) & mask);
+					self.raw_table.insert_key((index_addr + free_distance) & mask, key);
+					self.raw_table.insert_val((index_addr + free_distance) & mask, data);
 					self.size += 1;
 					return true
 				}
-			(free_distance, val) = self.find_closer_bucket(free_distance, index_addr, val, mask);
+			let (free_distance, val) = self.find_closer_bucket(free_distance, index_addr, val, mask);
 			}
 		}
 		self.raw_table.resize();
