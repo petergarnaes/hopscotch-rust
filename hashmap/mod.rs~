@@ -91,7 +91,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 
 	//used to displace a bucket nearer to the start_bucket of insert()
 	pub fn find_closer_bucket(&mut self, free_distance:uint, index_addr:uint, val:int, mask:uint)->(uint, int){
-		let mut move_bucket = self.raw_table.get_bucket((index_addr - (self.VIRTUAL_BUCKET_CAPACITY-1)) & mask);
+		let mut move_bucket = self.raw_table.get_bucket((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) & mask);
 		let mut free_dist = VIRTUAL_BUCKET_CAPACITY-1;
 		while(0 < free_dist){
 			let mut start_hop_info = move_bucket.hopinfo;

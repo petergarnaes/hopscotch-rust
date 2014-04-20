@@ -38,7 +38,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 			None => return None
 		}	
 		let &mut new_bucket = self.raw_table.get_bucket(index_addr);
-		let hop_info = new_bucket.hopinfo;
+		let hop_info = new_bucket.hop_info;
 
 		for i in range(0u, VIRTUAL_BUCKET_CAPACITY){
 		let mask2 = 1<<i;
@@ -49,7 +49,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 					let ret = Some(self.raw_table.get_val(addr));
 					self.raw_table.remove_key(addr);
 					self.raw_table.remove_val(addr);
-					new_bucket.hopinfo = new_bucket.hopinfo - mask2;
+					new_bucket.hop_info = new_bucket.hop_info - mask2;
 					self.size -= 1;
 					return ret;
 				}
@@ -69,7 +69,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 			None => return None
 		}	
         let &mut new_bucket = self.raw_table.get_bucket(index_addr);
-		let hop_info = new_bucket.hopinfo;
+		let hop_info = new_bucket.hop_info;
 
 		for i in range(0u, VIRTUAL_BUCKET_CAPACITY){
 			let mut tmp = hop_info;
@@ -82,7 +82,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 					return Some(self.raw_table.get_val((index_addr+i) & mask));
 				}
 			}
-			hop_info = check_bucket.hopinfo;
+			hop_info = check_bucket.hop_info;
 		}
         None;
     }
@@ -94,7 +94,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 		let mut move_bucket = self.raw_table.get_bucket((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) & mask);
 		let mut free_dist = VIRTUAL_BUCKET_CAPACITY-1;
 		while(0 < free_dist){
-			let mut start_hop_info = move_bucket.hopinfo;
+			let mut start_hop_info = move_bucket.hop_info;
 			let move_free_distance = -1;
 			let mask = 1u;
 			let iter = 0;
@@ -105,8 +105,8 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 				}
 			}
 		if(move_free_distance != -1){
-			if(start_hop_info == move_bucket.hopinfo){
-				move_bucket.hopinfo = (move_bucket.hopinfo | (1<< free_dist));
+			if(start_hop_info == move_bucket.hop_info){
+				move_bucket.hop_info = (move_bucket.hop_info | (1<< free_dist));
 
 				// Vi har et problem med pointers her. raw_table.get_val returnere en
 				// &data og ikke en data. For at kunne gøre dette skal dette derefereres.
@@ -119,7 +119,7 @@ self.raw_table.get_val(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + move_free_d
 				self.raw_table.insert_key(index_addr,
 self.raw_table.get_key(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + move_free_distance) & mask));
 
-				move_bucket.hopinfo = move_bucket.hopinfo & -(1<<move_free_distance);
+				move_bucket.hop_info = move_bucket.hop_info & -(1<<move_free_distance);
 				return ((free_distance - free_dist), val);
 				}
 			}
@@ -165,7 +165,7 @@ self.raw_table.get_key(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + move_free_d
 		if (free_distance < ADD_RANGE){
 			while(val != 0){
 				if(free_distance < VIRTUAL_BUCKET_CAPACITY){
-					start_bucket.hopinfo = start_bucket.hopinfo | (1<<free_distance);
+					start_bucket.hop_info = start_bucket.hop_info | (1<<free_distance);
 					self.raw_table.insert_key((index_addr + free_distance) & mask, key);
 					self.raw_table.insert_val((index_addr + free_distance) & mask, data);
 					self.size += 1;
