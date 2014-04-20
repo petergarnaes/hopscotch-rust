@@ -29,7 +29,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
     //Private help functions
 
 	//hust at decrement size ved remove
-    pub fn remove(&mut self, key:&K)->Option<V>{
+    pub fn remove(&mut self, key:&K)->Option<&V>{
 		let new_hash = self.hasher.hash(key);
 		let mask = self.raw_table.capacity()-1;
 		let index_addr: uint = 0;
@@ -46,9 +46,9 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 			if((mask & hop_info)){
 				let &mut check_bucket = self.raw_table.get_bucket(addr);
 				if(new_hash == check_bucket.hash){
-					let ret = Some(check_bucket.get_val(addr));
-					check_bucket.remove_key(addr);
-					check_bucket.remove_val(addr);
+					let ret = Some(self.raw_table.get_val(addr));
+					self.raw_table.remove_key(addr);
+					self.raw_table.remove_val(addr);
 					new_bucket.hopinfo = new_bucket.hopinfo - mask2;
 					self.size -= 1;
 					return ret;
@@ -60,7 +60,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 
 	//lookup - Lookups an item through the key and returns an Option:
 	// Some(item) if found, None if not found.
-    pub fn lookup(&self, key:K)->Option<V>{
+    pub fn lookup(&self, key:K)->Option<&V>{
         let new_hash = self.hasher.hash(key);
         let mask = self.raw_table.capacity()-1;
 		let index_addr: uint = 0;
@@ -79,10 +79,9 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 				//Might need some optimization. Might be able to use new_bucket instead which
 				//is memory efficient.
 				if(new_hash == check_bucket.hash){
-					return Some(check_bucket.get_val((index_addr+i) & mask));
+					return Some(self.raw_table.get_val((index_addr+i) & mask));
 				}
 			}
-			check_bucket = self.raw_table.get_bucket((index_addr + i) & mask);
 			hop_info = check_bucket.hopinfo;
 		}
         None;
