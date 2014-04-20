@@ -1,3 +1,4 @@
+#![feature(default_type_params)]
 extern crate rand;
 use std::cmp::max;
 use std::default::Default;
@@ -9,10 +10,11 @@ use std::option::{Option, Some, None};
 use raw_table::INITIAL_CAPACITY;
 mod raw_table;
 
+
 //ADD_RANGE - 
 static ADD_RANGE: uint = 256;
 
-#[deriving(Clone)]
+#[deriving(Clone, Hash)]
 pub struct HashMap<K, V, H>{
     hasher: sip::SipHasher,
     raw_table: raw_table::RawTable<K,V>,
@@ -179,12 +181,7 @@ self.raw_table.get_key(((index_addr - (self.VIRTUAL_BUCKET_CAPACITY-1)) + move_f
         };
 	    hashmap
     }
-<<<<<<< HEAD
 
-    pub fn with_capacity(&mut self, capacity: uint) -> HashMap<K, V>{
-		self.raw_table.new(capacity);
-		return self;
-=======
     pub fn with_capacity(capacity: uint) -> HashMap<K, V,sip::SipHasher>{
 		let rng = rand::task_rng();
         let r0 = rng.gen();
@@ -196,7 +193,7 @@ self.raw_table.get_key(((index_addr - (self.VIRTUAL_BUCKET_CAPACITY-1)) + move_f
 	        size: 0
         };
 	    hashmap
->>>>>>> 7910a0337e0bc16c604906ed60803f182b25ac86
+
     }
 
 }

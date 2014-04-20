@@ -1,4 +1,4 @@
-#![feature(default_type_params)]
+#[feature(default_type_params)]
 
 #[path="../../hashmap/mod.rs"]
 mod hopscotch;
