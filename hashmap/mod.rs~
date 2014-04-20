@@ -1,3 +1,4 @@
+#![feature(default_type_params)]
 extern crate rand;
 use std::cmp::max;
 use std::default::Default;
@@ -9,14 +10,13 @@ use std::option::{Option, Some, None};
 use raw_table::INITIAL_CAPACITY;
 mod raw_table;
 
-#![feature(default_type_params)]
 
 //ADD_RANGE - 
 static ADD_RANGE: uint = 256;
 
-#[deriving(Clone, Hash)]
-pub struct HashMap<K, V, H>{
-    hasher: sip::SipHasher,
+#[deriving(Clone)]
+pub struct HashMap<K, V, H: sip::SipHasher>{
+    hasher: H,
     raw_table: raw_table::RawTable<K,V>,
 	size: uint
 
@@ -30,7 +30,7 @@ impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> HashMap<K,V,H>{
 
 	//hust at decrement size ved remove
     pub fn remove(&mut self, key:K)->Option<V>{
-		let new_hash = self.hasher.hash(key);
+		let new_hash = self.hasher.hash(&key);
 		let mask = self.raw_table.capacity()-1;
 		let mut index_addr = new_hash & mask;
 		let mut new_bucket = self.raw_table.get_bucket(index_addr);

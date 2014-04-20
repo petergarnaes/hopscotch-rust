@@ -17,6 +17,7 @@ pub struct Bucket{
     pub hash:     u64
 }
 
+#[deriving(Show,Clone,Eq)]
 pub struct RawTable<K,V>{
     // Available elements
     capacity: uint,
@@ -54,12 +55,12 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
     pub fn remove_key<'a>(&mut self,idx:uint)->&'a K{
 		let x = self.keys[idx];
         self.keys[idx] = Default::default();
-		x
+		&x
     }
     pub fn remove_val<'a>(&mut self,idx:uint)->&'a V{
 		let x = self.keys[idx];
         self.vals[idx] = Default::default();
-		x
+		&x
     }
     pub fn insert_key(&mut self,idx:uint,elem:K){
         self.keys[idx] = elem

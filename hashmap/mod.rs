@@ -14,7 +14,7 @@ mod raw_table;
 //ADD_RANGE - 
 static ADD_RANGE: uint = 256;
 
-#[deriving(Clone, Hash)]
+#[deriving(Clone)]
 pub struct HashMap<K, V, H>{
     hasher: sip::SipHasher,
     raw_table: raw_table::RawTable<K,V>,
@@ -30,7 +30,7 @@ impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> HashMap<K,V,H>{
 
 	//hust at decrement size ved remove
     pub fn remove(&mut self, key:K)->Option<V>{
-		let new_hash = self.hasher.hash(key);
+		let new_hash = self.hasher.hash(&key);
 		let mask = self.raw_table.capacity()-1;
 		let mut index_addr = new_hash & mask;
 		let mut new_bucket = self.raw_table.get_bucket(index_addr);
