@@ -27,7 +27,7 @@ pub struct HashMap<K, V, H>{
 
 }
 
-#[deriving(Default)]
+
 impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> HashMap<K,V,H>{
     //Private help functions
 
@@ -46,7 +46,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 		for i in range(0u, VIRTUAL_BUCKET_CAPACITY){
 		let mask2 = 1<<i;
 		let mut addr = (index_addr+i) & mask;
-			if(mask & hop_info){
+			if((mask & hop_info)){
 				let &mut check_bucket = self.raw_table.get_bucket(addr);
 				if(new_hash == check_bucket.hash){
 					let ret = Some(check_bucket.get_val(addr));
@@ -58,6 +58,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 				}
 			}
 		}
+	None
     } 
 
 	//lookup - Lookups an item through the key and returns an Option:
@@ -109,8 +110,6 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 			}
 		if(move_free_distance != -1){
 			if(start_hop_info == move_bucket.hopinfo){
-				let new_free_bucket = self.raw_table.get_bucket();
-
 				move_bucket.hopinfo = (move_bucket.hopinfo | (1<< free_dist));
 				//inserts the data of the newly found bucket into the old one
 				self.raw_table.insert_val(index_addr,
