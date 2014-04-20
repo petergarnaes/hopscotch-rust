@@ -8,7 +8,7 @@ use std::slice::{from_elem};
 
 pub static VIRTUAL_BUCKET_CAPACITY: uint = 32;
 static INITIAL_LOG2_CAP: uint = 5;
-static INITIAL_CAPACITY: uint = 1 << INITIAL_LOG2_CAP; //2^5
+pub static INITIAL_CAPACITY: uint = 1 << INITIAL_LOG2_CAP; //2^5
 
 //Is not boxed, like structures are in Rust
 #[deriving(Show,Clone,Eq)]
@@ -54,12 +54,12 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
     pub fn remove_key<'a>(&mut self,idx:uint)->&'a K{
 		let x = self.keys[idx];
         self.keys[idx] = Default::default();
-		return x;
+		x
     }
     pub fn remove_val<'a>(&mut self,idx:uint)->&'a V{
 		let x = self.keys[idx];
         self.vals[idx] = Default::default();
-		return x;
+		x
     }
     pub fn insert_key(&mut self,idx:uint,elem:K){
         self.keys[idx] = elem

@@ -1,3 +1,4 @@
+extern crate rand;
 use std::cmp::max;
 use std::default::Default;
 use std::clone::Clone;
@@ -5,7 +6,7 @@ use std::hash::{Hash, Hasher, sip};
 use std::mem::replace;
 use std::num;
 use std::option::{Option, Some, None};
-
+use raw_table::INITIAL_CAPACITY;
 mod raw_table;
 
 //ADD_RANGE - 
@@ -155,41 +156,59 @@ self.raw_table.get_key(((index_addr - (self.VIRTUAL_BUCKET_CAPACITY-1)) + move_f
 			(free_distance, val) = self.find_closer_bucket(free_distance, index_addr, val, mask);
 			}
 		}
-<<<<<<< HEAD
 		self.raw_table.resize();
 		return self.insert(key, data);
     } 
-=======
-		resize();
-		return insert(key, data);
-    }
-    pub fn getRawTable(&mut self)->&mut raw_table::RawTable{
+  
+    pub fn getRawTable(&mut self)->&mut raw_table::RawTable<K,V>{
         &mut self.raw_table
     }
-    pub fn getSipHasher(&self)->&SipHasher{
+    pub fn getSipHasher(&self)->&sip::SipHasher{
         &self.hasher
     }
->>>>>>> c0e1c35a6ec974b8098c663d8d4c4105a2c88c33
+
+    pub fn new() -> HashMap<K, V,sip::SipHasher>{
+        let rng = rand::task_rng();
+        let r0 = rng.gen();
+        let r1 = rng.gen();
+        let hasher = sip::SipHasher::new_with_keys(r0,r1);
+        let hashmap = HashMap{
+            hasher: hasher,
+            raw_table: raw_table::RawTable::new(INITIAL_CAPACITY),
+	        size: 0
+        };
+	    hashmap
+    }
+<<<<<<< HEAD
+
+    pub fn with_capacity(&mut self, capacity: uint) -> HashMap<K, V>{
+		self.raw_table.new(capacity);
+		return self;
+=======
+    pub fn with_capacity(capacity: uint) -> HashMap<K, V,sip::SipHasher>{
+		let rng = rand::task_rng();
+        let r0 = rng.gen();
+        let r1 = rng.gen();
+        let hasher = sip::SipHasher::new_with_keys(r0,r1);
+        let hashmap = HashMap{
+            hasher: hasher,
+            raw_table: raw_table::RawTable::new(capacity),
+	        size: 0
+        };
+	    hashmap
+>>>>>>> 7910a0337e0bc16c604906ed60803f182b25ac86
+    }
 
 }
 
-impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> Map<K,V> for HashMap<K,V,H>{
-    fn find<'a>(&'a self, k: &K) -> Option<&'a V>{
+//impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> Map<K,V> for HashMap<K,V,H>{
+//    fn find<'a>(&'a self, k: &K) -> Option<&'a V>{
+//
+//    }
+//}
 
-    }
-}
-
-impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> MutableMap<K,V> for HashMap<K,V,H>{
-    fn find_mut<'a>(&'a mut self,k: &K) -> Option<&'a mut V>{
-
-    }
-  
-}
-impl<K: Hash + Eq, V> HashMap<K, V>{
-    pub fn new() -> HashMap<K, V, sip::SipHasher>{
-
-    }
-    pub fn with_capacity(capacity: uint) -> HashMap<K, V>{
-
-    }
-}
+//impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> MutableMap<K,V> for HashMap<K,V,H>{
+//    fn find_mut<'a>(&'a mut self,k: &K) -> Option<&'a mut V>{
+//
+//    }  
+//}

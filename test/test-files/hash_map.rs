@@ -14,7 +14,7 @@ mod test_hopscotch{
 
     #[test]
     fn test_lookup_without_insert(){
-        let m:HashMap<int,int> = HashMap::new(100);
+        let m:HashMap<int,int> = HashMap::new();
         let key = 5;
         let val = 6;
         // Configure raw table
@@ -27,7 +27,7 @@ mod test_hopscotch{
     }
     #[test]
     fn test_lookup_with_insert(){
-        let m:HashMap<int,int> = HashMap::new(500);
+        let m:HashMap<int,int> = HashMap::with_capacity(500);
         for i in range(0u,256u){
             m.insert(i,i+1);
         }
@@ -37,7 +37,7 @@ mod test_hopscotch{
     }
     #[test]
     fn test_insert_without_lookup(){
-        let m:HashMap<int,int> = HashMap::new(100);
+        let m:HashMap<int,int> = HashMap::new();
         let key = 60;
         let val = 567;
         m.insert(key,val);
@@ -48,7 +48,7 @@ mod test_hopscotch{
         assert!(r.get_key(raw_address) == key);
         assert!(r.get_val(raw_address) == val);
         // Try with many randomly generated numbers
-        let m2:HashMap<int,int> = HashMap::new(500);
+        let m2:HashMap<int,int> = HashMap::with_capacity(500);
         let mut rng = rand::task_rng();
         for i in range(0u,200u){
             let key = rng.gen();
@@ -84,11 +84,38 @@ mod test_hopscotch{
     //}
     #[test]
     fn test_remove_of_an_invalid_key(){
+        let m:HashMap<int,int> = HashMap::with_capacity(200);
+        let upper = 180u;
+        for i in range(1u,upper){
+            m.insert(i,i+2);
+        }
+        let op = m.remove(upper+1);
+        assert!(op == None);
 
     }
     #[test]
     fn test_remove_of_valid_key(){
-
+        let m:HashMap<int,int> = HashMap::with_capacity(200);
+        let upper = 180u;
+        for i in range(1u,upper){
+            m.insert(i,i+2);
+        }
+        for i in range(1u,upper){
+            let op = m.remove(i);
+            assert!(op == Some(i+2));
+        }
+    }
+    #[test]
+    fn test_remove_with_lookup(){
+        let m:HashMap<int,int> = HashMap::with_capacity(200);
+        let upper = 180u;
+        for i in range(1u,upper){
+            m.insert(i,i+2);
+        }
+        for i in range(1u,upper){
+            m.remove(i);
+            assert!(m.lookup(i) == None);
+        } 
     }
     #[test]
     fn test_resize(){
