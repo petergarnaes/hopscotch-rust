@@ -5,18 +5,20 @@ use std::default::Default;
 use std::clone::Clone;
 use std::hash::{Hash, Hasher, sip};
 use std::mem::replace;
-use std::num;
+use std::num::NumCast;
 use std::option::{Option, Some, None};
+use raw_table::VIRTUAL_BUCKET_CAPACITY;
 use raw_table::INITIAL_CAPACITY;
 mod raw_table;
 
 
 //ADD_RANGE - 
-static ADD_RANGE: uint = 256;
+pub static ADD_RANGE: uint = 256;
+pub static VIRTUAL_BUCKET_CAPACITY: uint = 32;
 
 #[deriving(Clone)]
-pub struct HashMap<K, V, H: sip::SipHasher>{
-    hasher: H,
+pub struct HashMap<K, V, H>{
+    hasher: sip::SipHasher,
     raw_table: raw_table::RawTable<K,V>,
 	size: uint
 
@@ -25,28 +27,34 @@ pub struct HashMap<K, V, H: sip::SipHasher>{
 
 }
 
-impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> HashMap<K,V,H>{
+#[deriving(Default)]
+impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> HashMap<K,V,H>{
     //Private help functions
 
 	//hust at decrement size ved remove
-    pub fn remove(&mut self, key:K)->Option<V>{
-		let new_hash = self.hasher.hash(&key);
+    pub fn remove(&mut self, key:&K)->Option<V>{
+		let new_hash = self.hasher.hash(key);
 		let mask = self.raw_table.capacity()-1;
-		let mut index_addr = new_hash & mask;
-		let mut new_bucket = self.raw_table.get_bucket(index_addr);
-		let mut hop_info = new_bucket.hopinfo;
+		let index_addr: uint = 0;
+		match new_hash.to_uint(){
+			Some(x) => index_addr = x & mask,
+			None => return None
+		}	
+		let &mut new_bucket = self.raw_table.get_bucket(index_addr);
+		let hop_info = new_bucket.hopinfo;
 
-		for i in range(0u, self.VIRTUAL_BUCKET_CAPACITY){
+		for i in range(0u, VIRTUAL_BUCKET_CAPACITY){
 		let mask2 = 1<<i;
 		let mut addr = (index_addr+i) & mask;
 			if(mask & hop_info){
-				let mut check_bucket = self.raw_table.get_bucket(addr);
+				let &mut check_bucket = self.raw_table.get_bucket(addr);
 				if(new_hash == check_bucket.hash){
 					let ret = Some(check_bucket.get_val(addr));
 					check_bucket.remove_key(addr);
 					check_bucket.remove_val(addr);
 					new_bucket.hopinfo = new_bucket.hopinfo - mask2;
-					self.raw_table.size -= 1;
+					self.size -= 1;
+					return ret;
 				}
 			}
 		}
@@ -57,19 +65,23 @@ impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> HashMap<K,V,H>{
     pub fn lookup(&self, key:K)->Option<V>{
         let new_hash = self.hasher.hash(key);
         let mask = self.raw_table.capacity()-1;
-        let mut index_addr = new_hash & mask;
-        let mut new_bucket = self.raw_table.get_bucket(index_addr);
-		let mut hop_info = new_bucket.hopinfo;
+		let index_addr: uint = 0;
+		match new_hash.to_uint(){
+			Some(x) => index_addr = x & mask,
+			None => return None
+		}	
+        let &mut new_bucket = self.raw_table.get_bucket(index_addr);
+		let hop_info = new_bucket.hopinfo;
 
-		for i in range(0u, self.VIRTUAL_BUCKET_CAPACITY){
+		for i in range(0u, VIRTUAL_BUCKET_CAPACITY){
 			let mut tmp = hop_info;
 			tmp = tmp >> i;
-			let mut check_bucket = self.raw_table.get_bucket((index_addr + i) & mask);
+			let &mut check_bucket = self.raw_table.get_bucket((index_addr + i) & mask);
 			if(tmp & 1){
 				//Might need some optimization. Might be able to use new_bucket instead which
 				//is memory efficient.
 				if(new_hash == check_bucket.hash){
-					Some(check_bucket.get_val((index_addr+i) & mask));
+					return Some(check_bucket.get_val((index_addr+i) & mask));
 				}
 			}
 			check_bucket = self.raw_table.get_bucket((index_addr + i) & mask);
@@ -83,7 +95,7 @@ impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> HashMap<K,V,H>{
 	//used to displace a bucket nearer to the start_bucket of insert()
 	pub fn find_closer_bucket(&mut self, free_distance:int, index_addr:uint, val:int, mask:uint)->(int, int){
 		let mut move_bucket = self.raw_table.get_bucket((index_addr - (self.VIRTUAL_BUCKET_CAPACITY-1)) & mask);
-		let mut free_dist = self.VIRTUAL_BUCKET_CAPACITY-1;
+		let mut free_dist = VIRTUAL_BUCKET_CAPACITY-1;
 		while(0 < free_dist){
 			let mut start_hop_info = move_bucket.hopinfo;
 			let move_free_distance = -1;
@@ -102,10 +114,10 @@ impl<K: Hash<S> + Eq, V, S, H: Hasher<S>> HashMap<K,V,H>{
 				move_bucket.hopinfo = (move_bucket.hopinfo | (1<< free_dist));
 				//inserts the data of the newly found bucket into the old one
 				self.raw_table.insert_val(index_addr,
-self.raw_table.get_val(((index_addr - (self.VIRTUAL_BUCKET_CAPACITY-1)) + move_free_distance) & mask));
+self.raw_table.get_val(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + move_free_distance) & mask));
 				//inserts the key of the newly found bucket into the old one
 				self.raw_table.insert_key(index_addr,
-self.raw_table.get_key(((index_addr - (self.VIRTUAL_BUCKET_CAPACITY-1)) + move_free_distance) & mask));
+self.raw_table.get_key(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + move_free_distance) & mask));
 
 				move_bucket.hopinfo = move_bucket.hopinfo & -(1<<move_free_distance);
 				return (free_distance - free_dist, val);
@@ -148,11 +160,11 @@ self.raw_table.get_key(((index_addr - (self.VIRTUAL_BUCKET_CAPACITY-1)) + move_f
 
 		if (free_distance < ADD_RANGE){
 			while(val != 0){
-				if(free_distance < self.VIRTUAL_BUCKET_CAPACITY){
+				if(free_distance < VIRTUAL_BUCKET_CAPACITY){
 					start_bucket.hopinfo = start_bucket.hopinfo | (1<<free_distance);
 					self.raw_table.insert_key((index_addr + free_distance, key) & mask);
 					self.raw_table.insert_val((index_addr + free_distance, data) & mask);
-					self.raw_table.size += 1;
+					self.size += 1;
 					return true
 				}
 			(free_distance, val) = self.find_closer_bucket(free_distance, index_addr, val, mask);
