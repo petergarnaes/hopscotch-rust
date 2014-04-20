@@ -22,9 +22,6 @@ pub struct HashMap<K, V, H>{
     raw_table: raw_table::RawTable<K,V>,
 	size: uint
 
-// Lets begin with an H=32 and find out later how we determine the bit size
-// and cache size of the system later
-
 }
 
 
@@ -58,6 +55,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 				}
 			}
 		}
+	None
     } 
 
 	//lookup - Lookups an item through the key and returns an Option:
@@ -142,7 +140,7 @@ self.raw_table.get_key(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + move_free_d
 		let index_addr: uint = 0;
 		match new_hash.to_uint(){
 			Some(x) => index_addr = x & mask,
-			None => return None
+			None => return false
 		}	
 		let mut start_bucket = self.raw_table.get_bucket(index_addr);
 
