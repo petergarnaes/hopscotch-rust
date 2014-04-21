@@ -31,22 +31,44 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
     //Private help functions
 
 	//hust at decrement size ved remove
-    pub fn remove<'a>(&'a mut self, key:K)->Option<&'a V>{
-		let new_hash = self.hasher.hash(&key);
-		let mask = self.raw_table.capacity()-1;
+    
+	fn make_new_bucket<'a>(&'a mut self, index_addr:uint)->&'a mut raw_table::Bucket{
+		self.raw_table.get_bucket(index_addr)
+	}
+
+
+	fn get_return_value<'a>(&'a self, addr:uint)->&'a V{
+		self.raw_table.get_val(addr)
+	}
+
+	fn decrement_size(&self){
+		self.size -= 1;
+	}
+	
+	fn make_hash(&self, key:K)->uint{
+		self.hasher.hash(&key)
+	}
+
+	fn make_mask(&self)->uint{
+		self.raw_table.capacity()-1
+	}
+
+	pub fn remove<'a>(&'a mut self, key:K)->Option<&'a V>{
+		let new_hash = self.make_hash(key);
+		let mask = self.make_mask();
 		let index_addr = (new_hash as uint) & mask;
-		let &mut new_bucket = self.raw_table.get_bucket(index_addr);
+		let &mut new_bucket = self.make_new_bucket(index_addr);
 		let hop_info = new_bucket.hop_info;
 
 		for i in range(0u, VIRTUAL_BUCKET_CAPACITY){
 		    let mask2 = 1<<i;
 		    let mut addr = (index_addr+i) & mask;
 			if mask & (hop_info as uint) == 1{
-				let &mut check_bucket = self.raw_table.get_bucket(addr);
+				let mut check_bucket = self.make_new_bucket(addr);
 				if(new_hash == check_bucket.hash){
 					new_bucket.hop_info = new_bucket.hop_info - mask2;
-					self.size -= 1;
-                    return Some(self.raw_table.get_val(addr));
+					self.decrement_size();
+                    return Some(self.get_return_value(addr));
 				}
 			}
 		}
@@ -56,25 +78,21 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 	//lookup - Lookups an item through the key and returns an Option:
 	// Some(item) if found, None if not found.
     pub fn lookup<'a>(&'a self, key:K)->Option<&'a V>{
-        let new_hash = self.hasher.hash(&key);
-        let mask = self.raw_table.capacity()-1;
-		let index_addr: uint = 0;
-		match new_hash.to_uint(){
-			Some(x) => index_addr = x & mask,
-			None => return None
-		}	
-        let &mut new_bucket = self.raw_table.get_bucket(index_addr);
-		let hop_info = new_bucket.hop_info;
+        let new_hash = self.make_hash(key);
+        let mask = self.make_mask();
+		let index_addr: uint = (new_hash as uint) & mask;
+        let new_bucket = self.make_new_bucket(index_addr);
+		let mut hop_info = new_bucket.hop_info;
 
 		for i in range(0u, VIRTUAL_BUCKET_CAPACITY){
 			let mut tmp = hop_info;
 			tmp = tmp >> i;
-			let &mut check_bucket = self.raw_table.get_bucket((index_addr + i) & mask);
+			let check_bucket = self.make_new_bucket((index_addr + i) & mask);
 			if tmp & 1 == 1{
 				//Might need some optimization. Might be able to use new_bucket instead which
 				//is memory efficient.
 				if(new_hash == check_bucket.hash){
-					return Some(self.raw_table.get_val((index_addr+i) & mask));
+					return Some(self.get_return_value((index_addr+i) & mask));
 				}
 			}
 			hop_info = check_bucket.hop_info;
@@ -82,7 +100,21 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
         None
     }
 
+fn get_swap_vals(&mut self, index_addr:uint, mfd:uint, mask:uint)->V{
+	*self.raw_table.get_val(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + mfd) & mask)
+}
 
+pub fn swap_vals(&mut self, index_addr:uint, mfd:uint, mask:uint){
+	self.raw_table.insert_val(index_addr, self.get_swap_vals(index_addr, mfd, mask));
+}
+
+fn get_swap_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
+	*self.raw_table.get_key(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + mfd) & mask)
+}
+
+pub fn swap_keys(&mut self, index_addr:uint, mfd:uint, mask:uint){
+	self.raw_table.insert_key(index_addr, self.get_swap_keys(index_addr, mfd, mask));
+}
 
 	//used to displace a bucket nearer to the start_bucket of insert()
 	pub fn find_closer_bucket(&mut self, free_distance:uint, index_addr:uint, val:int, mask:uint)->(uint, int){
@@ -90,7 +122,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 		let mut free_dist = VIRTUAL_BUCKET_CAPACITY-1;
 		while(0 < free_dist){
 			let mut start_hop_info = move_bucket.hop_info;
-			let move_free_distance = -1;
+			let mut move_free_distance = -1;
 			let mask = 1u;
 			let iter = 0;
 			for i in range(0, free_dist){
@@ -109,23 +141,20 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
                 // value.
 
 				//inserts the data of the newly found bucket into the old one
-				self.raw_table.insert_val(index_addr,
-                    *self.raw_table.get_val(((index_addr - 
-                        (VIRTUAL_BUCKET_CAPACITY-1)) + move_free_distance) & 
-                            mask));
+				{
+				self.swap_vals(index_addr, move_free_distance, mask);
+				}
 				//inserts the key of the newly found bucket into the old one
-				self.raw_table.insert_key(index_addr,
-                    *self.raw_table.get_key(((index_addr - (
-                        VIRTUAL_BUCKET_CAPACITY-1)) + move_free_distance) & 
-                            mask));
-
+				{
+				self.swap_keys(index_addr, move_free_distance, mask);
+				}
+				
 				move_bucket.hop_info = move_bucket.hop_info & -(1<<move_free_distance);
 				return ((free_distance - free_dist), val);
 				}
 			}
 		}
-		val = 1;
-		return (free_distance, val);
+		return (free_distance, val+1);
 	}
 
 
@@ -165,9 +194,9 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 					start_bucket.hop_info = start_bucket.hop_info | 
                                                             (1<<free_distance);
 					self.raw_table.insert_key((index_addr + free_distance) & 
-                                                                    mask, key);
+                                                                    mask, key.clone());
 					self.raw_table.insert_val((index_addr + free_distance) & 
-                                                                    mask, data);
+                                                                    mask, data.clone());
 					self.size += 1;
 					return true
 				}
@@ -176,7 +205,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 			}
 		}
 		self.raw_table.resize();
-		self.insert(key, data)
+		self.insert(key.clone(), data.clone())
     }
   
     pub fn getRawTable<'a>(&'a mut self)->&'a mut raw_table::RawTable<K,V>{
