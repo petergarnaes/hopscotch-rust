@@ -25,7 +25,7 @@ mod test_hopscotch{
     }
 
     fn insert_key_val_in_raw_table<K:Default+Clone,V:Default+Clone>
-                                (r:&mut hopscotch::raw_table::RawTable<K,V>,key:K,val:V,hash:u64){
+            (r:&mut hopscotch::raw_table::RawTable<K,V>,key:K,val:V,hash:u64){
         let raw_address = hash & ((r.capacity()-1u) as u64);
         r.insert_key((raw_address as uint),key);
         r.insert_val((raw_address as uint),val);
@@ -38,8 +38,7 @@ mod test_hopscotch{
         let key = 5;
         let val = 6;
         // Configure raw table
-        let hasher = m.getSipHasher();
-        let hash = hash_with_hasher(hasher,&key);
+        let hash = hash_with_hasher(m.getSipHasher(),&key);
         insert_key_val_in_raw_table(m.getRawTable(),key,val,hash);
         let op = m.lookup(key);
         match op{
@@ -67,11 +66,7 @@ mod test_hopscotch{
         let key = 60;
         let val = 567;
         m.insert(key,val);
-        let mut hash:u64 = 0;
-        {
-            let hasher = m.getSipHasher();
-            hash = hasher.hash(&key);
-        }
+        let hash = m.getSipHasher().hash(&key);
         let r = m.getRawTable();
         let raw_address = hash & ((r.capacity()-1u) as u64);
         assert!(*r.get_key((raw_address as uint)) == key);
@@ -83,11 +78,7 @@ mod test_hopscotch{
             let key2 = rng.gen();
             let val2 = rng.gen();
             m2.insert(key2,val2);
-            let mut hash2:u64 = 0;
-            {
-                let hasher2 = m2.getSipHasher();
-                hash2 = hasher2.hash(&key2); 
-            }
+            let hash2 = m2.getSipHasher().hash(&key2); 
             let r2 = m2.getRawTable();
             let raw_address2 = hash2 & (r2.capacity() as u64);
             // Check if bucket has only one element placed at the raw address
