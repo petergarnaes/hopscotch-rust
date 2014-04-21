@@ -8,9 +8,9 @@ mod raw_table;
 
 #[cfg(test)]
 mod test_hopscotch{
-    //use std::hash::{Hash,Hasher,sip};
     //use collections::hashmap::HashMap;
     extern crate rand;
+    use std::hash::{Hash,Hasher,sip};
     use super::hopscotch::{HashMap};
     use super::raw_table::VIRTUAL_BUCKET_CAPACITY;
 
@@ -25,16 +25,24 @@ mod test_hopscotch{
         let raw_address = hasher.hash(key) & r.capacity();
         r.insert_key(raw_address,key);
         r.insert_val(raw_address,val);
-        assert!(m.lookup(key) == val);
+        let op = m.lookup(key);
+        match op{
+            Some(var) => assert!(*var == val),
+            None => fail!("lookup doesn't work!")
+        }
     }
     #[test]
     fn test_lookup_with_insert(){
-        let m:HashMap<int,int> = HashMap::with_capacity(500);
+        let m:HashMap<uint,uint> = HashMap::with_capacity(500);
         for i in range(0u,256u){
             m.insert(i,i+1);
         }
         for i in range(0u,256u){
-            assert!(m.lookup(i) == i+1);
+            let op = m.lookup(i);
+            match op{
+                Some(var) => assert!(*var == i+1),
+                None => fail!("lookup doesn't work!")
+            }
         }
     }
     #[test]
@@ -47,10 +55,10 @@ mod test_hopscotch{
         let hasher = m.getSipHasher();
         let hash = hasher.hash(key);
         let raw_address = hash & r.capacity();
-        assert!(r.get_key(raw_address) == key);
-        assert!(r.get_val(raw_address) == val);
+        assert!(*r.get_key(raw_address) == key);
+        assert!(*r.get_val(raw_address) == val);
         // Try with many randomly generated numbers
-        let m2:HashMap<int,int> = HashMap::with_capacity(500);
+        let m2:HashMap<uint,uint> = HashMap::with_capacity(500);
         let mut rng = rand::task_rng();
         for i in range(0u,200u){
             let key = rng.gen();
@@ -86,7 +94,7 @@ mod test_hopscotch{
     //}
     #[test]
     fn test_remove_of_an_invalid_key(){
-        let m:HashMap<int,int> = HashMap::with_capacity(200);
+        let m:HashMap<uint,uint> = HashMap::with_capacity(200);
         let upper = 180u;
         for i in range(1u,upper){
             m.insert(i,i+2);
@@ -97,19 +105,22 @@ mod test_hopscotch{
     }
     #[test]
     fn test_remove_of_valid_key(){
-        let m:HashMap<int,int> = HashMap::with_capacity(200);
+        let m:HashMap<uint,uint> = HashMap::with_capacity(200);
         let upper = 180u;
         for i in range(1u,upper){
             m.insert(i,i+2);
         }
         for i in range(1u,upper){
             let op = m.remove(i);
-            assert!(op == Some(i+2));
+            match op {
+                Some(var) => assert!(*var == i+2),
+                None => fail!("remove doesn't work!")
+            }
         }
     }
     #[test]
     fn test_remove_with_lookup(){
-        let m:HashMap<int,int> = HashMap::with_capacity(200);
+        let m:HashMap<uint,uint> = HashMap::with_capacity(200);
         let upper = 180u;
         for i in range(1u,upper){
             m.insert(i,i+2);

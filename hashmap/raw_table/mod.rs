@@ -58,7 +58,7 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
 		&x
     }
     pub fn remove_val<'a>(&mut self,idx:uint)->&'a V{
-		let x = self.keys[idx];
+		let x = self.vals[idx];
         self.vals[idx] = Default::default();
 		&x
     }
