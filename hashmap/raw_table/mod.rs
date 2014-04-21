@@ -43,6 +43,9 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
                   };
         ret
     }
+    pub fn get_i_bucket<'a>(&'a self,idx:uint)->&'a Bucket{
+        self.buckets.get(idx)
+    }
     pub fn get_bucket<'a>(&'a mut self,idx:uint)->&'a mut Bucket{
         self.buckets.get_mut(idx)
     }
