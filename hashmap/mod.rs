@@ -11,7 +11,7 @@ use std::num;
 use std::option::{Option, Some, None};
 use raw_table::VIRTUAL_BUCKET_CAPACITY;
 use raw_table::INITIAL_CAPACITY;
-mod raw_table;
+pub mod raw_table;
 
 
 //ADD_RANGE - 
