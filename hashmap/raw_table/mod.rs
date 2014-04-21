@@ -4,7 +4,7 @@ use std::mem::replace;
 use std::cmp::max;
 use std::num;
 use std::default::Default;
-use std::slice::{from_elem};
+use std::vec::Vec;
 
 pub static VIRTUAL_BUCKET_CAPACITY: uint = 32;
 static INITIAL_LOG2_CAP: uint = 5;
@@ -22,19 +22,19 @@ pub struct RawTable<K,V>{
     // Available elements
     capacity: uint,
     // Occupied elements
-    buckets:  ~[Bucket], //Contains hop info and hash
-    keys:     ~[K],
-    vals:     ~[V]
+    buckets:  Vec<Bucket>, //Contains hop info and hash
+    keys:     Vec<K>,
+    vals:     Vec<V>
 }
 
 impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
     pub fn new(cap: uint) -> RawTable<K,V>{
         let capacity = num::next_power_of_two(max(INITIAL_CAPACITY,cap));
-        let bucket_vec = from_elem(capacity,Bucket{hop_info:0,hash:0});
+        let bucket_vec = Vec::from_elem(capacity,Bucket{hop_info:0,hash:0});
         let a:K = Default::default();
-        let keys_vec = from_elem(capacity,a);
+        let keys_vec = Vec::from_elem(capacity,a);
         let b:V = Default::default();
-        let vals_vec = from_elem(capacity,b);
+        let vals_vec = Vec::from_elem(capacity,b);
         let ret = RawTable{
                       capacity: capacity,
                       buckets: bucket_vec,
@@ -44,29 +44,25 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
         ret
     }
     pub fn get_bucket<'a>(&'a mut self,idx:uint)->&'a mut Bucket{
-        &mut self.buckets[idx]
+        self.buckets.get_mut(idx)
     }
     pub fn get_key<'a>(&'a self,idx:uint)->&'a K{
-        &self.keys[idx]
+        self.keys.get(idx)
     }
     pub fn get_val<'a>(&'a self,idx:uint)->&'a V{
-        &self.vals[idx]
+        self.vals.get(idx)
     }
-    pub fn remove_key<'a>(&mut self,idx:uint)->&'a K{
-		let x = self.keys[idx];
-        self.keys[idx] = Default::default();
-		&x
+    pub fn remove_key<'a>(&'a mut self,idx:uint)->&'a K{
+		self.keys.get(idx)
     }
-    pub fn remove_val<'a>(&mut self,idx:uint)->&'a V{
-		let x = self.vals[idx];
-        self.vals[idx] = Default::default();
-		&x
+    pub fn remove_val<'a>(&'a mut self,idx:uint)->&'a V{
+		self.vals.get(idx)
     }
     pub fn insert_key(&mut self,idx:uint,elem:K){
-        self.keys[idx] = elem
+        self.keys.insert(idx,elem);
     }
     pub fn insert_val(&mut self,idx:uint,elem:V){
-        self.vals[idx] = elem
+        self.vals.insert(idx,elem);
     }
     pub fn resize(&mut self)->bool{
         // Check if table can be resized, return false if it can't
@@ -82,11 +78,11 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
         // either one
         let old_capacity = replace(&mut self.capacity,new_capacity);
         let old_buckets = replace(&mut self.buckets,
-                    from_elem(self.capacity,Bucket{hop_info:0,hash:0}));
+                    Vec::from_elem(self.capacity,Bucket{hop_info:0,hash:0}));
         let a:K = Default::default();
-        let old_keys = replace(&mut self.keys,from_elem(self.capacity,a));
+        let old_keys = replace(&mut self.keys,Vec::from_elem(self.capacity,a));
         let b:V = Default::default();
-        let old_vals = replace(&mut self.vals,from_elem(self.capacity,b));
+        let old_vals = replace(&mut self.vals,Vec::from_elem(self.capacity,b));
         // Use old values to repopulate table
         
         // Holds which of the next virtual_bucket_size elements are full
@@ -98,12 +94,12 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
             if info & 1 == 1 {
                 let old_address = (bucket.hash as uint) & old_mask;
                 let new_address = (bucket.hash as uint) & new_mask;
-                replace(&mut self.buckets[new_address],
-                                                old_buckets[old_address]);
-                replace(&mut self.keys[new_address],
-                                                old_keys[old_address].clone());
-                replace(&mut self.vals[new_address],
-                                                old_vals[old_address].clone());
+                replace(self.buckets.get_mut(new_address),
+                                                *old_buckets.get(old_address));
+                replace(self.keys.get_mut(new_address),
+                                            old_keys.get(old_address).clone());
+                replace(self.vals.get_mut(new_address),
+                                            old_vals.get(old_address).clone());
             }
             info = info >> 1;
         }

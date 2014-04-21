@@ -1,6 +1,7 @@
 #![feature(default_type_params)]
 extern crate rand;
 //use rand::Rng;
+use rand::Rng;
 use std::cmp::max;
 use std::default::Default;
 use std::clone::Clone;
@@ -33,26 +34,19 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
     pub fn remove<'a>(&'a mut self, key:K)->Option<&'a V>{
 		let new_hash = self.hasher.hash(&key);
 		let mask = self.raw_table.capacity()-1;
-		let index_addr: uint = 0;
-		match new_hash.to_uint(){
-			Some(x) => index_addr = x & mask,
-			None => return None
-		}	
+		let index_addr = (new_hash as uint) & mask;
 		let &mut new_bucket = self.raw_table.get_bucket(index_addr);
 		let hop_info = new_bucket.hop_info;
 
 		for i in range(0u, VIRTUAL_BUCKET_CAPACITY){
-		let mask2 = 1<<i;
-		let mut addr = (index_addr+i) & mask;
+		    let mask2 = 1<<i;
+		    let mut addr = (index_addr+i) & mask;
 			if mask & (hop_info as uint) == 1{
 				let &mut check_bucket = self.raw_table.get_bucket(addr);
 				if(new_hash == check_bucket.hash){
-					let ret = Some(self.raw_table.get_val(addr));
-					self.raw_table.remove_key(addr);
-					self.raw_table.remove_val(addr);
 					new_bucket.hop_info = new_bucket.hop_info - mask2;
 					self.size -= 1;
-					return ret;
+                    return Some(self.raw_table.get_val(addr));
 				}
 			}
 		}
