@@ -84,11 +84,10 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 		for i in range(0u, VIRTUAL_BUCKET_CAPACITY){
 			tmp = tmp >> i;
 			let (check_hop, check_hash) = self.get_bucket_info((index_addr + i) & mask);
-			if tmp & 1 == 1{
+			if (tmp & 1) == 1{
 				//Might need some optimization. Might be able to use new_bucket instead which
 				//is memory efficient.
 				if(new_hash == check_hash){
-					println!("pew");
 					return Some(self.get_return_value((index_addr+i) & mask));
 				}
 			}
@@ -107,7 +106,7 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
 }
 
 	//used to displace a bucket nearer to the start_bucket of insert()
-	pub fn find_closer_bucket(&mut self, free_distance:uint, index_addr:uint, val:int, mask:uint)->(uint, int, uint){
+	pub fn find_closer_bucket(&mut self, free_distance:&mut uint, index_addr:uint, val:&mut int, mask:uint)->uint{
 		let ( mut move_info, _) = self.get_bucket_info((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) & mask);
 		let mut free_dist = VIRTUAL_BUCKET_CAPACITY-1u;
 		while(0 < free_dist){
@@ -141,11 +140,14 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
 				}
 				
 				self.raw_table.get_bucket((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).hop_info = move_info & -(1<<move_free_distance);
-				return ((free_distance - free_dist), val, move_free_distance as uint);
+				
+				*free_distance = *free_distance - free_dist;
+				return (move_free_distance as uint);
 				}
 			}
 		}
-		return (0, 0, 0);
+		*val = 0;
+		return 0u;
 	}
 
 	//Insert skal anvende move_free_distance når den skal finde sine buckets. I starten af funktionen skal denne
@@ -171,12 +173,12 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
 		let (start_info, _) = self.get_bucket_info(index_addr);
 		let mut free_distance = 0u;
 		let mfd = 0u;
-		let val = 1;
+		let mut val = 1;
         let mut info = 0;
 		for i in range(0,  ADD_RANGE){
 			let (b_info, _) = self.get_bucket_info((index_addr+i) & mask);
             info = info | b_info;
-			if info & 1 == 0 {
+			if (info & 1) == 0 {
 				break;
 			}
 			free_distance += 1;
@@ -187,6 +189,8 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
 				if free_distance < VIRTUAL_BUCKET_CAPACITY {
 					self.raw_table.get_bucket(index_addr).hop_info = start_info | 
                                                             (1<<free_distance);
+					self.raw_table.get_bucket(index_addr).hash = new_hash;
+
 					self.raw_table.insert_key((index_addr + free_distance + mfd) & 
                                                                     mask, key.clone());
 					self.raw_table.insert_val((index_addr + free_distance + mfd) & 
@@ -194,8 +198,7 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
 					self.size += 1;
 					return true
 				}
-			let (free_distance, val, mfd) = self.find_closer_bucket(free_distance, 
-                                                        index_addr, val, mask);
+				self.find_closer_bucket(&mut free_distance, index_addr, &mut val, mask);
 			}
 		}
 		self.raw_table.resize();

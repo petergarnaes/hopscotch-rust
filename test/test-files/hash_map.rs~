@@ -17,7 +17,7 @@ mod test_hopscotch{
     use std::default::Default;
     use super::hopscotch;
     use super::hopscotch::{HashMap};
-    //use super::raw_table::RawTable;
+    use super::raw_table::RawTable;
     use super::raw_table::VIRTUAL_BUCKET_CAPACITY;
 
     fn hash_with_hasher<T:Hash>(hasher:&sip::SipHasher,key:&T)->u64{
@@ -32,6 +32,18 @@ mod test_hopscotch{
 
     }
 
+	fn main(){
+    	let mut m:HashMap<int,int> = HashMap::new();
+		for i in range(0, 10){
+			let bob = m.insert(i,i);
+			assert!(bob);
+		}
+			let rawtable = m.getRawTable();
+			for j in range(0u ,10){
+				!("{}", rawtable.get_i_bucket(j).hash);
+			}	
+
+	}
     #[test]
     fn test_lookup_without_insert(){
         let mut m:HashMap<int,int> = HashMap::new();

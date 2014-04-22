@@ -7,7 +7,7 @@ use std::default::Default;
 use std::vec::Vec;
 
 pub static VIRTUAL_BUCKET_CAPACITY: uint = 32;
-static INITIAL_LOG2_CAP: uint = 5;
+static INITIAL_LOG2_CAP: uint = 4;
 pub static INITIAL_CAPACITY: uint = 1 << INITIAL_LOG2_CAP; //2^5
 
 //Is not boxed, like structures are in Rust

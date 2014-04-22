@@ -32,6 +32,7 @@ mod test_hopscotch{
 
     }
 
+
     #[test]
     fn test_lookup_without_insert(){
         let mut m:HashMap<int,int> = HashMap::new();
