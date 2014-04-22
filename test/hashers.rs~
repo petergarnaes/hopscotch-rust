@@ -1,13 +1,5 @@
-#![feature(default_type_params)]
-extern crate rand;
-use hopscotch::{HashMap};
 use std::hash::{Hasher,Hash};
 use std::io::IoResult;
-
-#[path="../../hashmap/mod.rs"]
-mod hopscotch;
-#[path="../../hashmap/raw_table/mod.rs"]
-mod raw_table;
 
 struct HasherZeroAndUp;
 
@@ -60,25 +52,3 @@ impl Writer for HashSameBucket {
         Ok(())
     }
 }
-
-fn main(){
-    	let mut m = HashMap::with_hasher(HasherSameBucket);
-		for i in range(1, 11){
-			let bob = m.insert(i,i);
-			if !bob{
-				println!("Ur insert is fkd")
-			}
-            let bib = m.lookup(i);
-            match bib {
-                Some(x) => println!("val:{}",x),
-                None => fail!("This sucks!")
-            };
-		}
-			let rawtable = m.getRawTable();
-			for j in range(0u ,16){
-				let bucket = rawtable.get_i_bucket(j);
-				println!("Hash:{}    Hopinfo:{}", bucket.hash, bucket.hop_info);
-			}	
-            println!("raw table size: {}",rawtable.capacity());
-
-	}

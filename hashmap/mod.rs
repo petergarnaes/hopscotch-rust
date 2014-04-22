@@ -169,7 +169,7 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
 		}
 		let new_hash = self.hasher.hash(&key);
 		let mask = self.raw_table.capacity()-1;
-        println!("mask:{}",mask);
+        println!("hash:{}",new_hash);
 		let index_addr = mask & (new_hash as uint);
 		let (start_info, _) = self.get_bucket_info(index_addr);
 		let mut free_distance = 0u;
@@ -192,8 +192,8 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
                     println!("inserting value");
 					self.raw_table.get_bucket(index_addr).hop_info = start_info | 
                                                             (1<<free_distance);
-					self.raw_table.get_bucket(index_addr).hash = new_hash;
-
+					self.raw_table.get_bucket((index_addr + free_distance) & 
+                                                        mask).hash = new_hash;
 					self.raw_table.insert_key((index_addr + free_distance + mfd) & 
                                                                     mask, key.clone());
 					self.raw_table.insert_val((index_addr + free_distance + mfd) & 
