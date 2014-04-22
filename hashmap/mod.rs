@@ -50,14 +50,6 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 		self.size -= 1;
 	}
 	
-	fn make_hash(&self, key:K)->u64{
-		self.hasher.hash(&key)
-	}
-
-	fn make_mask(&self)->uint{
-		self.raw_table.capacity()-1
-	}
-
 	pub fn remove<'a>(&'a mut self, key:K)->Option<&'a V>{
 		let new_hash = self.hasher.hash(&key);
 		let mask = self.raw_table.capacity()-1u;
@@ -96,6 +88,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 				//Might need some optimization. Might be able to use new_bucket instead which
 				//is memory efficient.
 				if(new_hash == check_hash){
+					println!("pew");
 					return Some(self.get_return_value((index_addr+i) & mask));
 				}
 			}
@@ -108,20 +101,13 @@ fn get_sec_vals(&mut self, index_addr:uint, mfd:uint, mask:uint)->V{
 	self.raw_table.get_val(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + mfd) & mask).clone()
 }
 
-pub fn swap_vals(&mut self, index_addr:uint)->V{
-	self.raw_table.get_val(index_addr).clone()
-}
 
 fn get_sec_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
 	self.raw_table.get_key(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + mfd) & mask).clone()
 }
 
-pub fn swap_keys(&mut self, index_addr:uint)->K{
-	self.raw_table.get_key(index_addr).clone()
-}
-
 	//used to displace a bucket nearer to the start_bucket of insert()
-	pub fn find_closer_bucket(&mut self, free_distance:uint, index_addr:uint, mut val:int, mask:uint)->(uint, int, uint){
+	pub fn find_closer_bucket(&mut self, free_distance:uint, index_addr:uint, val:int, mask:uint)->(uint, int, uint){
 		let ( mut move_info, _) = self.get_bucket_info((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) & mask);
 		let mut free_dist = VIRTUAL_BUCKET_CAPACITY-1u;
 		while(0 < free_dist){
@@ -159,7 +145,7 @@ pub fn swap_keys(&mut self, index_addr:uint)->K{
 				}
 			}
 		}
-		return (0, val+1, 0);
+		return (0, 0, 0);
 	}
 
 	//Insert skal anvende move_free_distance når den skal finde sine buckets. I starten af funktionen skal denne
@@ -176,16 +162,16 @@ pub fn swap_keys(&mut self, index_addr:uint)->K{
 	}
 	
     pub fn insert(&mut self, key:K, data:V)-> bool{
-		if(self.check_key(&key)){
+		if self.check_key(&key) {
 			return false
 		}
 		let new_hash = self.hasher.hash(&key);
 		let mask = self.raw_table.capacity()-1;
 		let index_addr = mask & (new_hash as uint);
-		let (mut start_info, _) = self.get_bucket_info(index_addr);
+		let (start_info, _) = self.get_bucket_info(index_addr);
 		let mut free_distance = 0u;
-		let mut mfd = 0u;
-		let mut val = 1;
+		let mfd = 0u;
+		let val = 1;
         let mut info = 0;
 		for i in range(0,  ADD_RANGE){
 			let (b_info, _) = self.get_bucket_info((index_addr+i) & mask);
@@ -197,8 +183,8 @@ pub fn swap_keys(&mut self, index_addr:uint)->K{
 		}
 
 		if free_distance < ADD_RANGE {
-			while(val != 0){
-				if(free_distance < VIRTUAL_BUCKET_CAPACITY){
+			while val != 0 {
+				if free_distance < VIRTUAL_BUCKET_CAPACITY {
 					self.raw_table.get_bucket(index_addr).hop_info = start_info | 
                                                             (1<<free_distance);
 					self.raw_table.insert_key((index_addr + free_distance + mfd) & 
