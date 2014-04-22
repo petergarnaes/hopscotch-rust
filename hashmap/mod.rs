@@ -32,20 +32,25 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 
 	//hust at decrement size ved remove
     
-	fn make_new_bucket<'a>(&'a mut self, index_addr:uint)->&'a mut raw_table::Bucket{
-		self.raw_table.get_bucket(index_addr)
+	fn get_bucket_info(&self, index_addr:uint)->(u32, u64) {
+		let b = self.raw_table.get_i_bucket(index_addr);
+		let x = b.hop_info.clone();
+		let y = b.hash.clone();
+		(x,y)
 	}
+	
+	//fn change_bucket_info(&mut self, index_addr:uint)
 
 
 	fn get_return_value<'a>(&'a self, addr:uint)->&'a V{
 		self.raw_table.get_val(addr)
 	}
 
-	fn decrement_size(&self){
+	fn decrement_size(&mut self){
 		self.size -= 1;
 	}
 	
-	fn make_hash(&self, key:K)->uint{
+	fn make_hash(&self, key:K)->u64{
 		self.hasher.hash(&key)
 	}
 
@@ -57,16 +62,16 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 		let new_hash = self.make_hash(key);
 		let mask = self.make_mask();
 		let index_addr = (new_hash as uint) & mask;
-		let &mut new_bucket = self.make_new_bucket(index_addr);
-		let hop_info = new_bucket.hop_info;
+		let (hop_info, _) = self.get_bucket_info(index_addr);
 
 		for i in range(0u, VIRTUAL_BUCKET_CAPACITY){
 		    let mask2 = 1<<i;
 		    let mut addr = (index_addr+i) & mask;
 			if mask & (hop_info as uint) == 1{
-				let mut check_bucket = self.make_new_bucket(addr);
-				if(new_hash == check_bucket.hash){
-					new_bucket.hop_info = new_bucket.hop_info - mask2;
+				let (_, check_hash) = self.get_bucket_info(addr);
+				if(new_hash == check_hash){
+					self.raw_table.get_bucket(index_addr).hop_info =
+						self.raw_table.get_bucket(index_addr).hop_info - mask2;
 					self.decrement_size();
                     return Some(self.get_return_value(addr));
 				}
@@ -81,21 +86,20 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
         let new_hash = self.make_hash(key);
         let mask = self.make_mask();
 		let index_addr: uint = (new_hash as uint) & mask;
-        let new_bucket = self.make_new_bucket(index_addr);
-		let mut hop_info = new_bucket.hop_info;
+        let (hop_info, bucket_hash) = self.get_bucket_info(index_addr);
+		let mut tmp = hop_info;		
 
 		for i in range(0u, VIRTUAL_BUCKET_CAPACITY){
-			let mut tmp = hop_info;
 			tmp = tmp >> i;
-			let check_bucket = self.make_new_bucket((index_addr + i) & mask);
+			let (check_hop, check_hash) = self.get_bucket_info((index_addr + i) & mask);
 			if tmp & 1 == 1{
 				//Might need some optimization. Might be able to use new_bucket instead which
 				//is memory efficient.
-				if(new_hash == check_bucket.hash){
+				if(new_hash == check_hash){
 					return Some(self.get_return_value((index_addr+i) & mask));
 				}
 			}
-			hop_info = check_bucket.hop_info;
+			tmp = check_hop;
 		}
         None
     }
