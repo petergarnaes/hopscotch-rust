@@ -55,12 +55,6 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
     pub fn get_val<'a>(&'a self,idx:uint)->&'a V{
         self.vals.get(idx)
     }
-    pub fn remove_key<'a>(&'a mut self,idx:uint)->&'a K{
-		self.keys.get(idx)
-    }
-    pub fn remove_val<'a>(&'a mut self,idx:uint)->&'a V{
-		self.vals.get(idx)
-    }
     pub fn insert_key(&mut self,idx:uint,elem:K){
         self.keys.insert(idx,elem);
     }

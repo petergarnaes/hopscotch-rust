@@ -169,6 +169,7 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
 		}
 		let new_hash = self.hasher.hash(&key);
 		let mask = self.raw_table.capacity()-1;
+        println!("mask:{}",mask);
 		let index_addr = mask & (new_hash as uint);
 		let (start_info, _) = self.get_bucket_info(index_addr);
 		let mut free_distance = 0u;
@@ -181,28 +182,34 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
 			if (info & 1) == 0 {
 				break;
 			}
-			info >> 1;
+			info = info >> 1;
 			free_distance += 1;
 		}
-
+        println!("free distance: {}",free_distance);
 		if free_distance < ADD_RANGE {
 			while val != 0 {
 				if free_distance < VIRTUAL_BUCKET_CAPACITY {
+                    println!("inserting value");
 					self.raw_table.get_bucket(index_addr).hop_info = start_info | 
                                                             (1<<free_distance);
 					self.raw_table.get_bucket(index_addr).hash = new_hash;
 
-					self.raw_table.insert_key((index_addr + free_distance-1) + mfd) & 
+					self.raw_table.insert_key((index_addr + free_distance + mfd) & 
                                                                     mask, key.clone());
 					self.raw_table.insert_val((index_addr + free_distance + mfd) & 
                                                                     mask, data.clone());
 					self.size += 1;
-					return true
+					return true;
+                    println!("are we returning?!");
+                    
 				}
+                println!("val before:{}",val);
 				self.find_closer_bucket(&mut free_distance, index_addr, &mut val, mask);
+                println!("val after: {}",val);
 			}
 		}
-		self.raw_table.resize();
+        println!("Lets resize!");
+	    self.raw_table.resize();
 		self.insert(key.clone(), data.clone())
     }
   
