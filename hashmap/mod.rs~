@@ -121,7 +121,7 @@ pub fn swap_keys(&mut self, index_addr:uint)->K{
 }
 
 	//used to displace a bucket nearer to the start_bucket of insert()
-	pub fn find_closer_bucket(&mut self, free_distance:uint, index_addr:uint, val:int, mask:uint)->(uint, int, uint){
+	pub fn find_closer_bucket(&mut self, free_distance:uint, index_addr:uint, mut val:int, mask:uint)->(uint, int, uint){
 		let ( mut move_info, _) = self.get_bucket_info((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) & mask);
 		let mut free_dist = VIRTUAL_BUCKET_CAPACITY-1u;
 		while(0 < free_dist){
@@ -145,7 +145,8 @@ pub fn swap_keys(&mut self, index_addr:uint)->K{
 
 				//inserts the keys of the newly found bucket into the old one
 				{
-				self.raw_table.insert_key(index_addr, self.get_sec_keys(index_addr, move_free_distance, mask));
+				let a = self.get_sec_keys(index_addr, move_free_distance, mask);
+				self.raw_table.insert_key(index_addr, a);
 				}
 				//inserts the data of the newly found bucket into the old one
 				{

@@ -145,11 +145,13 @@ pub fn swap_keys(&mut self, index_addr:uint)->K{
 
 				//inserts the keys of the newly found bucket into the old one
 				{
-				self.raw_table.insert_key(index_addr, self.get_sec_keys(index_addr, move_free_distance, mask));
+				let a = self.get_sec_keys(index_addr, move_free_distance, mask);
+				self.raw_table.insert_key(index_addr, a);
 				}
 				//inserts the data of the newly found bucket into the old one
 				{
-				self.raw_table.insert_val(index_addr, self.get_sec_vals(index_addr, move_free_distance, mask));
+				let b = self.get_sec_vals(index_addr, move_free_distance, mask);
+				self.raw_table.insert_val(index_addr, b);
 				}
 				
 				self.raw_table.get_bucket((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).hop_info = move_info & -(1<<move_free_distance);
