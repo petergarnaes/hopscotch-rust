@@ -181,6 +181,7 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
 			if (info & 1) == 0 {
 				break;
 			}
+			info >> 1;
 			free_distance += 1;
 		}
 
@@ -191,9 +192,9 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
                                                             (1<<free_distance);
 					self.raw_table.get_bucket(index_addr).hash = new_hash;
 
-					self.raw_table.insert_key((index_addr + (free_distance-1) + mfd) & 
+					self.raw_table.insert_key((index_addr + free_distance-1) + mfd) & 
                                                                     mask, key.clone());
-					self.raw_table.insert_val((index_addr + (free_distance-1) + mfd) & 
+					self.raw_table.insert_val((index_addr + free_distance + mfd) & 
                                                                     mask, data.clone());
 					self.size += 1;
 					return true
