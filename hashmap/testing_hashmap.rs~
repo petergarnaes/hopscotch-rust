@@ -1,9 +1,0 @@
-mod ../hashmap;
-
-fn main(){
-	let x = Hashmap::new();
-	x.insert(123, 11);
-	let a = x.lookup(123);
-	let b = x.remove(123);
-	print("{}", a == b);
-}

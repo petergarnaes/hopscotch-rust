@@ -196,4 +196,5 @@ jeg kan se kan det fjernes.
 Fremtidige forbedrelser: Jeg tror vi kan omgås raw_table funktionerne 
 get_bucket, insert_key osv, og bare gøre structurens elementer public, og lade 
 hashmapet accesse det. Vi skal dog bibeholde resize osv. Clone kan måske 
-ungås nogle steder?
+ungås nogle steder? Evt, splitte get_bucket_info op i to, synes ikke man bruger
+begge dele samtidigt.

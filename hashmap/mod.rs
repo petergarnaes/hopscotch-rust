@@ -23,7 +23,6 @@ pub struct HashMap<K, V, H = sip::SipHasher>{
     hasher: H,
     raw_table: raw_table::RawTable<K,V>,
 	size: uint
-
 }
 
 
@@ -78,20 +77,18 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
         let new_hash = self.hasher.hash(&key);
         let mask = self.raw_table.capacity()-1u;
 		let index_addr: uint = (new_hash as uint) & mask;
-        let (hop_info, bucket_hash) = self.get_bucket_info(index_addr);
-		let mut tmp = hop_info;		
+        let (mut hop_info,_) = self.get_bucket_info(index_addr);
 
 		for i in range(0u, VIRTUAL_BUCKET_CAPACITY){
-			tmp = tmp >> i;
-			let (check_hop, check_hash) = self.get_bucket_info((index_addr + i) & mask);
-			if (tmp & 1) == 1{
+			if (hop_info & 1) == 1{
 				//Might need some optimization. Might be able to use new_bucket instead which
 				//is memory efficient.
+			    let (_,check_hash) = self.get_bucket_info((index_addr + i) & mask);
 				if(new_hash == check_hash){
 					return Some(self.get_return_value((index_addr+i) & mask));
 				}
 			}
-			tmp = check_hop;
+			hop_info = hop_info >> 1;
 		}
         None
     }
@@ -185,11 +182,9 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
 			info = info >> 1;
 			free_distance += 1;
 		}
-        println!("free distance: {}",free_distance);
 		if free_distance < ADD_RANGE {
 			while val != 0 {
 				if free_distance < VIRTUAL_BUCKET_CAPACITY {
-                    println!("inserting value");
 					self.raw_table.get_bucket(index_addr).hop_info = start_info | 
                                                             (1<<free_distance);
 					self.raw_table.get_bucket((index_addr + free_distance) & 
@@ -200,15 +195,11 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
                                                                     mask, data.clone());
 					self.size += 1;
 					return true;
-                    println!("are we returning?!");
                     
 				}
-                println!("val before:{}",val);
 				self.find_closer_bucket(&mut free_distance, index_addr, &mut val, mask);
-                println!("val after: {}",val);
 			}
 		}
-        println!("Lets resize!");
 	    self.raw_table.resize();
 		self.insert(key.clone(), data.clone())
     }
