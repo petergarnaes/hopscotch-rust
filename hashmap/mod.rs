@@ -53,20 +53,23 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 		let new_hash = self.hasher.hash(&key);
 		let mask = self.raw_table.capacity()-1u;
 		let index_addr = (new_hash as uint) & mask;
-		let (hop_info, _) = self.get_bucket_info(index_addr);
+		let (hop_info,_) = self.get_bucket_info(index_addr);
+		let mut info = 1u32;
 
 		for i in range(0u, VIRTUAL_BUCKET_CAPACITY){
-		    let mask2 = 1<<i;
-		    let mut addr = (index_addr+i) & mask;
-			if mask & (hop_info as uint) == 1{
+			if info & hop_info >= 1u32{
+		        let mut addr = (index_addr+i) & mask;
 				let (_, check_hash) = self.get_bucket_info(addr);
 				if(new_hash == check_hash){
-					self.raw_table.get_bucket(index_addr).hop_info =
-						self.raw_table.get_bucket(index_addr).hop_info - mask2;
-					self.decrement_size();
+                    {
+                    let remove_bucket = self.raw_table.get_bucket(index_addr);
+                    remove_bucket.hop_info = remove_bucket.hop_info - info;
+					}
+                    self.decrement_size();
                     return Some(self.get_return_value(addr));
 				}
 			}
+            info = info << 1;
 		}
 	    None
     } 
@@ -162,7 +165,7 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
 	
     pub fn insert(&mut self, key:K, data:V)-> bool{
 		if self.check_key(&key) {
-			return false
+			return false;
 		}
 		let new_hash = self.hasher.hash(&key);
 		let mask = self.raw_table.capacity()-1;
@@ -176,17 +179,18 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
 		for i in range(0,  ADD_RANGE){
 			let (b_info, _) = self.get_bucket_info((index_addr+i) & mask);
             info = info | b_info;
+            println!("info in insert: {}",info);
 			if (info & 1) == 0 {
 				break;
 			}
 			info = info >> 1;
 			free_distance += 1;
 		}
+        println!("free_distance in insert: {}",free_distance);
 		if free_distance < ADD_RANGE {
 			while val != 0 {
 				if free_distance < VIRTUAL_BUCKET_CAPACITY {
-					self.raw_table.get_bucket(index_addr).hop_info = start_info | 
-                                                            (1<<free_distance);
+					self.raw_table.get_bucket(index_addr).hop_info = start_info | (1<<free_distance);
 					self.raw_table.get_bucket((index_addr + free_distance) & 
                                                         mask).hash = new_hash;
 					self.raw_table.insert_key((index_addr + free_distance + mfd) & 

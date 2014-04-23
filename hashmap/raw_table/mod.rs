@@ -22,7 +22,8 @@ pub struct RawTable<K,V>{
     // Available elements
     capacity: uint,
     // Occupied elements
-    buckets:  Vec<Bucket>, //Contains hop info and hash
+    //buckets:  Vec<Bucket>, //Contains hop info and hash
+    buckets: Vec<Bucket>,
     keys:     Vec<K>,
     vals:     Vec<V>
 }
@@ -56,10 +57,11 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
         self.vals.get(idx)
     }
     pub fn insert_key(&mut self,idx:uint,elem:K){
-        self.keys.insert(idx,elem);
+        *self.keys.get_mut(idx) = elem;
+        //replace(self.keys.get_mut(idx),elem);
     }
     pub fn insert_val(&mut self,idx:uint,elem:V){
-        self.vals.insert(idx,elem);
+        replace(self.vals.get_mut(idx),elem);
     }
     pub fn resize(&mut self)->bool{
         // Check if table can be resized, return false if it can't

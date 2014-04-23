@@ -19,20 +19,32 @@ fn main(){
 			if !bob{
 				println!("Ur insert is fkd")
 			}
-            let bib = m.lookup(i);
-            match bib {
+            match m.lookup(i) {
                 Some(x) => println!("looked up value:{}",x),
                 None => fail!("This sucks!")
             };
+            m.remove(i);
+            match m.lookup(i) {
+                Some(_) => fail!("Doesn't remove properly"),
+                None => println!("value was removed properly")
+            };
+            println!("Hop info: {}",m.getRawTable().get_bucket(1).hop_info);
 		}
-			let rawtable = m.getRawTable();
-			for j in range(0u ,16){
-				let bucket = rawtable.get_i_bucket(j);
-                let key = rawtable.get_key(j);
-                let val = rawtable.get_val(j);
-				println!("Hash:{}    Hopinfo:{}", bucket.hash, bucket.hop_info);
-                println!("Key:{}     Value:{}", key,val);
-			}	
-            println!("raw table size: {}",rawtable.capacity());
-
+        //for i in range(1,11){
+        //    m.remove(i);
+        //    match m.lookup(i){
+        //        Some(_) => fail!("Doesn't remove properly"),
+        //        None => println!("value was removed properly")
+        //    };
+        //    println!("Hop info: {}",m.getRawTable().get_bucket(1).hop_info);
+        //}
+		let rawtable = m.getRawTable();
+		for j in range(0u ,16){
+			let bucket = rawtable.get_i_bucket(j);
+            let key = rawtable.get_key(j);
+            let val = rawtable.get_val(j);
+			println!("Hash:{}    Hopinfo:{}", bucket.hash, bucket.hop_info);
+            println!("Key:{}     Value:{}", key,val);
+		}	
+        println!("raw table size: {}",rawtable.capacity());
 	}

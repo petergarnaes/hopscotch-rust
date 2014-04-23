@@ -197,4 +197,8 @@ Fremtidige forbedrelser: Jeg tror vi kan omgås raw_table funktionerne
 get_bucket, insert_key osv, og bare gøre structurens elementer public, og lade 
 hashmapet accesse det. Vi skal dog bibeholde resize osv. Clone kan måske 
 ungås nogle steder? Evt, splitte get_bucket_info op i to, synes ikke man bruger
-begge dele samtidigt.
+begge dele samtidigt. Brug #[inline] da dette tag sørger for funktionskald 
+bliver genereret som kode inde i funktionen istedet for at man laver et 
+funktionskald hvor man flytter stack pointer osv.
+Det er også værd at finde ud af, hvad er hurtigst, replace(vec.get_mut(i),elem);
+eller *vec.get_mut = elem;.
