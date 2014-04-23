@@ -19,11 +19,11 @@ fn main(){
 			if !bob{
 				println!("Ur insert is fkd")
 			}
-            //let bib = m.lookup(i);
-            //match bib {
-            //    Some(x) => println!("val:{}",x),
-            //    None => fail!("This sucks!")
-            //};
+            let bib = m.lookup(i);
+            match bib {
+                Some(x) => println!("looked up value:{}",x),
+                None => fail!("This sucks!")
+            };
 		}
 			let rawtable = m.getRawTable();
 			for j in range(0u ,16){
