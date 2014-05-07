@@ -188,8 +188,8 @@ flytte flere værdier for at programmet compiler.
 
 Efter en lille rettelse og en pæn print af hash table kan jeg konstatere at 
 insert virker, men at lookup ikke gør. Kan forhåbenligt hurtigt få styr på 
-23. april
 
+23. april
 Der er nogle ting jeg ikke forstår i koden: hvad er mfd på linje 176? Så vidt 
 jeg kan se kan det fjernes.
 
@@ -202,3 +202,7 @@ bliver genereret som kode inde i funktionen istedet for at man laver et
 funktionskald hvor man flytter stack pointer osv.
 Det er også værd at finde ud af, hvad er hurtigst, replace(vec.get_mut(i),elem);
 eller *vec.get_mut = elem;.
+
+1. maj:
+Major bug! I insert skal vi også se på hop info fra de forrige buckets for at 
+sikre vi ikke insætter et sted de forrige buckets optager (doh!).

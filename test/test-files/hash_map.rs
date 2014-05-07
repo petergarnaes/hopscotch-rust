@@ -27,6 +27,11 @@ mod test_hopscotch{
     fn insert_key_val_in_raw_table<K:Default+Clone,V:Default+Clone>
             (r:&mut hopscotch::raw_table::RawTable<K,V>,key:K,val:V,hash:u64){
         let raw_address = hash & ((r.capacity()-1u) as u64);
+        {
+            let mut b = r.get_bucket(raw_address as uint);
+            b.hash = hash;
+            b.hop_info = 1;
+        }
         r.insert_key((raw_address as uint),key);
         r.insert_val((raw_address as uint),val);
 
@@ -50,10 +55,10 @@ mod test_hopscotch{
     #[test]
     fn test_lookup_with_insert(){
         let mut m:HashMap<uint,uint> = HashMap::with_capacity(500);
-        for i in range(0u,256u){
+        for i in range(1u,256u){
             m.insert(i,i+1);
         }
-        for i in range(0u,256u){
+        for i in range(1u,256u){
             let op = m.lookup(i);
             match op{
                 Some(var) => assert!(*var == i+1),
@@ -81,7 +86,7 @@ mod test_hopscotch{
             m2.insert(key2,val2);
             let hash2 = m2.getSipHasher().hash(&key2); 
             let r2 = m2.getRawTable();
-            let raw_address2 = hash2 & (r2.capacity() as u64);
+            let raw_address2 = hash2 & ((r2.capacity()-1) as u64);
             // Check if bucket has only one element placed at the raw address
             if r2.get_bucket((raw_address2 as uint)).hop_info == 1{
                 assert!(*r2.get_key((raw_address2 as uint)) == key2);
@@ -91,9 +96,9 @@ mod test_hopscotch{
                 let mask = r2.capacity()-1;
                 let mut hit = false;
                 let mut info = r2.get_bucket((raw_address2 as uint)).hop_info;
-                for i in range(1u,VIRTUAL_BUCKET_CAPACITY-1){
+                for j in range(0u,VIRTUAL_BUCKET_CAPACITY-1){
                     if info & 1 == 1{
-                        if *r2.get_key((raw_address2 as uint)+i & mask) == key2{
+                        if *r2.get_key((raw_address2 as uint)+j & mask) == key2{
                             hit = true;
                         }
                     }
@@ -145,20 +150,20 @@ mod test_hopscotch{
             assert!(m.lookup(i) == None);
         } 
     }
-    #[test]
-    fn test_resize(){
-
-    }
-    #[test]
-    fn test_insert_after_resize(){
-
-    }
-    #[test]
-    fn test_lookup_after_resize(){
-
-    }
-    #[test]
-    fn test_remove_after_resize(){
-
-    }
+    //#[test]
+    //fn test_resize(){
+//
+  //  }
+    //#[test]
+    //fn test_insert_after_resize(){
+//
+    //}
+    //#[test]
+    //fn test_lookup_after_resize(){
+//
+    //}
+    //#[test]
+    //fn test_remove_after_resize(){
+//
+    //}
 }
