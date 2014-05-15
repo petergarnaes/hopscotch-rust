@@ -8,7 +8,7 @@ mod raw_table;
 mod hashers;
 
 fn main(){
-    let h = hashers::HasherOddDisplace::new(10,64);
+    let h = hashers::HasherFindCloserBucket::new(10,64);
 	let mut x = hopscotch::HashMap::new();
 	x.insert(123, 11);
     let a = match x.lookup(123){
@@ -21,24 +21,25 @@ fn main(){
     };
 	println!("{}", a == b);
     let mut m = hopscotch::HashMap::with_capacity_and_hasher(64,h);
-    for i in range(1,40){
+    for i in range(1,34){
         m.insert(i,i+1);
+        for j in range(0u,m.getRawTable().capacity()){
+            let rawtable = m.getRawTable();
+            let bucket = rawtable.get_i_bucket(j);
+            let key = rawtable.get_key(j);
+            let val = rawtable.get_val(j);
+            println!("{} Hash:{} hop _info:{}",j,bucket.hash,bucket.hop_info);
+            println!("key:{} value:{}",key,val);
+        }
         if i != 1 {
             for k in range(1,i){
+                println!("k:{}",k);
                 match m.lookup(k){
                     Some(var) => assert!(*var == k+1),
                     None => fail!("Fak!")
                 }
             }
         }
-        let rawtable = m.getRawTable();
-        for j in range(1u,64u){
-            let bucket = rawtable.get_i_bucket(j);
-            let key = rawtable.get_key(j);
-            let val = rawtable.get_val(j);
-            println!("{} Hash:{} hop _info:{}",j,bucket.hash,bucket.hop_info);
-            println!("key:{} value:{}",key,val);
-        } 
     }
     let rawtable = m.getRawTable();
     for j in range(1u,64u){

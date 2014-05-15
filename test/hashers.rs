@@ -108,3 +108,48 @@ impl Writer for HashOddDisplace {
         Ok(())
     }
 }
+pub struct HasherFindCloserBucket{
+    table_size:u64,
+    bucket_idx:u64,
+}
+
+impl HasherFindCloserBucket{
+    pub fn new(idx:u64,size:u64)->HasherFindCloserBucket{
+        HasherFindCloserBucket{table_size:size,bucket_idx:idx}
+    }
+}
+
+impl Hasher<HashFindCloserBucket> for HasherFindCloserBucket{
+    fn hash<T:Hash<HashFindCloserBucket>>(&self,value:&T)->u64{
+        let mut state = HashFindCloserBucket{
+            table_size:self.table_size,
+            bucket_idx:self.bucket_idx,
+            hash:0};
+        value.hash(&mut state);
+        state.hash
+    }
+}
+
+struct HashFindCloserBucket{
+    table_size:u64,
+    bucket_idx:u64,
+    hash: u64,
+}
+
+impl Writer for HashFindCloserBucket {
+    fn write(&mut self, buf: &[u8]) -> IoResult<()>{
+        let mut a = 0u64;
+        for byte in buf.iter(){
+            a += *byte as u64
+        }
+        let b = self.table_size * a;
+        if a < 32 {
+            self.hash = self.bucket_idx + b + 1;
+        } else {
+            self.hash = self.bucket_idx + b;
+        }
+        //println!("hash:{}",self.hash);
+        //self.hash = 1u64;
+        Ok(())
+    }
+}

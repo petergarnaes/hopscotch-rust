@@ -102,30 +102,30 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
     }
 
 //used to get the value of the displacing bucket
-fn get_sec_vals(&mut self, index_addr:uint, mfd:uint, mask:uint)->V{
-	self.raw_table.get_val(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + mfd) & mask).clone()
+fn get_sec_vals(&mut self, index_addr:uint, mfd:&uint, mask:uint)->V{
+	self.raw_table.get_val(((index_addr+*mfd) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).clone()
 }
 
 //used to get the key of the displacing bucket
-fn get_sec_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
-	self.raw_table.get_key(((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) + mfd) & mask).clone()
+fn get_sec_keys(&mut self, index_addr:uint, mfd:&uint, mask:uint)->K{
+	self.raw_table.get_key(((index_addr+*mfd) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).clone()
 }
 
 	//used to displace a bucket nearer to the start_bucket of insert()
 	pub fn find_closer_bucket(&mut self, free_distance:&mut uint, index_addr:uint, val:&mut int, mask:uint)->uint{
-		let ( mut move_info, _) = self.get_bucket_info(((index_addr + *free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask);
-        println!("move info:{}",move_info);
+		let ( mut move_info, old_hash) = self.get_bucket_info(((index_addr + *free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask);
+        println!("free distance in closer bucket:{}",*free_distance);
 		let mut free_dist = VIRTUAL_BUCKET_CAPACITY-1u;
 		while(0 < free_dist){
 			let start_hop_info = move_info;
 			let mut move_free_distance = -1;
-			let mut mask = 1u;
+			let mut mask2 = 1u;
 			for i in range(0, free_dist){
-				if mask & (start_hop_info as uint) == 1{
+				if mask2 & (start_hop_info as uint) == 1{
 					move_free_distance = i;
 					break;
 				}
-                mask = mask << 1;
+                mask2 = mask2 << 1;
 			}
 		if(move_free_distance != -1){
             println!("Bobby plz!");
@@ -138,17 +138,20 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:uint, mask:uint)->K{
                 // value.
 
 				//inserts the keys of the newly found bucket into the old one
-				{
-				let a = self.get_sec_keys(index_addr, move_free_distance, mask);
-				self.raw_table.insert_key(index_addr, a);
-				}
+				//{
+                self.raw_table.get_bucket((index_addr+*free_distance) & mask).hash = old_hash;
+
+				let a = self.get_sec_keys(index_addr, free_distance, mask);
+				self.raw_table.insert_key((index_addr+*free_distance) & mask, a);
+				//}
 				//inserts the data of the newly found bucket into the old one
-				{
-				let b = self.get_sec_vals(index_addr, move_free_distance, mask);
-				self.raw_table.insert_val(index_addr, b);
-				}
+				//{
+				let b = self.get_sec_vals(index_addr, free_distance, mask);
+				self.raw_table.insert_val((index_addr+*free_distance) & mask, b);
+				//}
 				
-				self.raw_table.get_bucket((index_addr - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).hop_info = move_info & -(1<<move_free_distance);
+                println!("move_free_distance{}",move_free_distance);
+				self.raw_table.get_bucket(((index_addr+*free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).hop_info -= (1<<move_free_distance);
 				println!("free dist:{}",free_dist);
 				*free_distance = *free_distance - free_dist;
 				return (move_free_distance as uint);
