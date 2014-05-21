@@ -90,9 +90,12 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
         let new_mask = self.capacity - 1;
         for bucket in old_buckets.iter(){
             info = info | bucket.hop_info;
+            println!("Info:{}",info);
             if info & 1 == 1 {
                 let old_address = (bucket.hash as uint) & old_mask;
+                println!("Old address:{}",old_address);
                 let new_address = (bucket.hash as uint) & new_mask;
+                println!("New address:{}",new_address);
                 replace(self.buckets.get_mut(new_address),
                                                 *old_buckets.get(old_address));
                 replace(self.keys.get_mut(new_address),

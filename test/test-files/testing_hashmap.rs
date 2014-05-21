@@ -21,7 +21,7 @@ fn main(){
     };
 	println!("{}", a == b);
     let mut m = hopscotch::HashMap::with_capacity_and_hasher(64,h);
-    for i in range(1,34){
+    for i in range(1,35){
         m.insert(i,i+1);
         for j in range(0u,m.getRawTable().capacity()){
             let rawtable = m.getRawTable();

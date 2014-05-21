@@ -236,8 +236,24 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:&uint, mask:uint)->K{
 			}
 		}
         println!("Blob");
-	    self.raw_table.resize();
+	    self.resize();
 		self.insert(key.clone(), data.clone())
+    }
+
+    pub fn resize(&mut self){
+        let new_capacity = self.raw_table.capacity() << 1;
+        println!("new capacity:{}",new_capacity);
+        let old_table = replace(&mut self.raw_table,raw_table::RawTable::new(new_capacity));
+        let old_capacity = old_table.capacity();
+        let mut info = 0;
+        for i in range(0,old_capacity){
+            info = info | old_table.get_i_bucket(i).hop_info;
+            println!("info:{}",info);
+            if info & 1 == 1 {
+                self.insert(old_table.get_key(i).clone(),old_table.get_val(i).clone());
+            }
+            info = info >> 1;
+        }
     }
   
     pub fn getRawTable<'a>(&'a mut self)->&'a mut raw_table::RawTable<K,V>{
