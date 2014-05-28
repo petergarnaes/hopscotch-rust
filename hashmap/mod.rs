@@ -97,7 +97,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 			}
 			hop_info = hop_info >> 1;
 		}
-        println!("Debug101");
+        //println!("Debug101");
         None
     }
 
@@ -114,7 +114,7 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:&uint, mask:uint)->K{
 	//used to displace a bucket nearer to the start_bucket of insert()
 	pub fn find_closer_bucket(&mut self, free_distance:&mut uint, index_addr:uint, val:&mut int, mask:uint)->uint{
 		let ( mut move_info, old_hash) = self.get_bucket_info(((index_addr + *free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask);
-        println!("free distance in closer bucket:{}",*free_distance);
+        //println!("free distance in closer bucket:{}",*free_distance);
 		let mut free_dist = VIRTUAL_BUCKET_CAPACITY-1u;
 		while(0 < free_dist){
 			let start_hop_info = move_info;
@@ -128,7 +128,7 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:&uint, mask:uint)->K{
                 mask2 = mask2 << 1;
 			}
 		if(move_free_distance != -1){
-            println!("Bobby plz!");
+            //println!("Bobby plz!");
 			if(start_hop_info == move_info){
 				self.raw_table.get_bucket(((index_addr+*free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).hop_info = (move_info | (1<< free_dist));
 
@@ -150,9 +150,9 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:&uint, mask:uint)->K{
 				self.raw_table.insert_val((index_addr+*free_distance) & mask, b);
 				//}
 				
-                println!("move_free_distance{}",move_free_distance);
+                //println!("move_free_distance{}",move_free_distance);
 				self.raw_table.get_bucket(((index_addr+*free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).hop_info -= (1<<move_free_distance);
-				println!("free dist:{}",free_dist);
+				//println!("free dist:{}",free_dist);
 				*free_distance = *free_distance - free_dist;
 				return (move_free_distance as uint);
 				}
@@ -215,11 +215,11 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:&uint, mask:uint)->K{
 			while val != 0 {
 				if free_distance < VIRTUAL_BUCKET_CAPACITY {
                     //assert!(start_info & (1<<free_distance) != 0); 
-                    println!("info:{}",info);
-                    println!("index address:{}",index_addr);
-                    println!("free distance at insert:{}",free_distance);
+                    //println!("info:{}",info);
+                    //println!("index address:{}",index_addr);
+                    //println!("free distance at insert:{}",free_distance);
                     self.raw_table.get_bucket(index_addr).hop_info |= (1<<free_distance);
-					println!("address:{}",(index_addr + free_distance) & mask);
+					//println!("address:{}",(index_addr + free_distance) & mask);
 					self.raw_table.get_bucket((index_addr + free_distance) & 
                                                         mask).hash = new_hash;
 					self.raw_table.insert_key((index_addr + free_distance) & 
@@ -230,25 +230,25 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:&uint, mask:uint)->K{
 					return true;
                     
 				}
-                println!("free distance before closer bucket:{}",free_distance);
+                //println!("free distance before closer bucket:{}",free_distance);
 				self.find_closer_bucket(&mut free_distance, index_addr, &mut val, mask);
-                println!("free distance after closer bucket:{}",free_distance);
+                //println!("free distance after closer bucket:{}",free_distance);
 			}
 		}
-        println!("Blob");
+        //println!("Blob");
 	    self.resize();
 		self.insert(key.clone(), data.clone())
     }
 
     pub fn resize(&mut self){
         let new_capacity = self.raw_table.capacity() << 1;
-        println!("new capacity:{}",new_capacity);
+        //println!("new capacity:{}",new_capacity);
         let old_table = replace(&mut self.raw_table,raw_table::RawTable::new(new_capacity));
         let old_capacity = old_table.capacity();
         let mut info = 0;
         for i in range(0,old_capacity){
             info = info | old_table.get_i_bucket(i).hop_info;
-            println!("info:{}",info);
+            //println!("info:{}",info);
             if info & 1 == 1 {
                 self.insert(old_table.get_key(i).clone(),old_table.get_val(i).clone());
             }
