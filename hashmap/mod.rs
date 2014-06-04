@@ -15,7 +15,7 @@ pub mod raw_table;
 
 
 //ADD_RANGE - 
-pub static ADD_RANGE: uint = 512;
+pub static ADD_RANGE: uint = 256;
 pub static VIRTUAL_BUCKET_CAPACITY: uint = 32;
 
 #[deriving(Clone)]
@@ -101,19 +101,20 @@ impl<K: Hash<S> + Default + Clone, V: Default + Clone, S, H: Hasher<S>> HashMap<
     }
 
 //used to get the value of the displacing bucket
-fn get_sec_vals(&mut self, index_addr:uint, mfd:&uint, mask:uint)->V{
-	self.raw_table.get_val(((index_addr+*mfd) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).clone()
+fn get_sec_vals(&mut self, index_addr:uint, mfd:uint, free_distance:&uint, mask:uint)->V{
+	self.raw_table.get_val(((index_addr+mfd+*free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).clone()
 }
 
 //used to get the key of the displacing bucket
-fn get_sec_keys(&mut self, index_addr:uint, mfd:&uint, mask:uint)->K{
-	self.raw_table.get_key(((index_addr+*mfd) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).clone()
+fn get_sec_keys(&mut self, index_addr:uint,mfd:uint, free_distance:&uint, mask:uint)->K{
+	self.raw_table.get_key(((index_addr+mfd+*free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).clone()
 }
 
 	//used to displace a bucket nearer to the start_bucket of insert()
 	pub fn find_closer_bucket(&mut self, free_distance:&mut uint, index_addr:uint, val:&mut int, mask:uint)->uint{
+        let mut iter = 0;
 		let mut move_info = self.raw_table.get_bucket(((index_addr + *free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).hop_info.clone();
-		let old_hash = self.raw_table.get_bucket(((index_addr + *free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).hash.clone();
+        //println!("move_info:{}",move_info);
         //println!("free distance in closer bucket:{}",*free_distance);
 		let mut free_dist = VIRTUAL_BUCKET_CAPACITY-1u;
 		while(0 < free_dist){
@@ -139,14 +140,15 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:&uint, mask:uint)->K{
 
 				//inserts the keys of the newly found bucket into the old one
 				//{
-                self.raw_table.get_bucket((index_addr+*free_distance) & mask).hash = old_hash;
+		        let old_hash = self.raw_table.get_bucket(((index_addr + *free_distance+move_free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).hash.clone();
+                self.raw_table.get_bucket((index_addr+*free_distance+move_free_distance) & mask).hash = old_hash;
 
-				let a = self.get_sec_keys(index_addr, free_distance, mask);
+				let a = self.get_sec_keys(index_addr, move_free_distance, free_distance, mask);
 				self.raw_table.insert_key((index_addr+*free_distance) & mask, a);
 				//}
 				//inserts the data of the newly found bucket into the old one
 				//{
-				let b = self.get_sec_vals(index_addr, free_distance, mask);
+				let b = self.get_sec_vals(index_addr, move_free_distance, free_distance, mask);
 				self.raw_table.insert_val((index_addr+*free_distance) & mask, b);
 				//}
 				
@@ -157,6 +159,8 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:&uint, mask:uint)->K{
 				return (move_free_distance as uint);
 				}
 			}
+            iter += 1;
+		    move_info = self.raw_table.get_bucket(((index_addr + *free_distance+iter) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).hop_info.clone();
             free_dist = free_dist - 1;
 		}
 		*val = 0;
@@ -241,7 +245,7 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:&uint, mask:uint)->K{
                 //println!("free distance after closer bucket:{}",free_distance);
 			}
 		}
-        //println!("Blob");
+        println!("free_distance:{}",free_distance);
 	    self.resize();
 		self.insert(key.clone(), data.clone())
     }

@@ -14,61 +14,68 @@ mod raw_table;
 #[path="../hashers.rs"]
 mod hashers;
 
-static HASHMAP_CAPACITY:uint = 40000;
+static HASHMAP_CAPACITY:uint = 32768;
+static OPERATIONS:uint = 500;
+static AVG_SIZE:u64 = 10;
 
-fn insert_lookup_remove_robin(load:int)->u64{
+fn insert_lookup_remove_robin(load:uint,ops:uint)->u64{
     let mut m = HashMap::with_capacity(HASHMAP_CAPACITY);
-    // The inserts will fill the table to the desired loadfactor, and the 
-    // other operations will scale accordingly
-    let start = precise_time_ns();
     for i in range(1,load){
         m.insert(i,i+1);
     }
-    for _ in range(0,18){
-        for j in range(1,load){
-            m.find(&j);
+    let start = precise_time_ns();
+    for i in range(load,load+ops){
+        m.insert(i,i+1);
+        for _ in range(0,18){
+            m.find(&i);
         }
-    }
-    for k in range(1,load){
-        m.remove(&k);
+        m.remove(&i);
     }
     let end = precise_time_ns();
     end - start
 }
-fn insert_lookup_remove_hopscotch(load:int)->u64{
+fn insert_lookup_remove_hopscotch(load:uint,ops:uint)->u64{
     let mut m = hopscotch::HashMap::with_capacity(HASHMAP_CAPACITY);
-    // The inserts will fill the table to the desired loadfactor, and the 
-    // other operations will scale accordingly
-    let start = precise_time_ns();
     for i in range(1,load){
         m.insert(i,i+1);
     }
-    for _ in range(0,18){
-        for j in range(1,load){
-            m.lookup(j);
+    let start = precise_time_ns();
+    for i in range(load,load+ops){
+        m.insert(i,i+1);
+        for _ in range(0,18){
+            m.lookup(i);
         }
-    }
-    for k in range(1,load){
-        m.remove(k);
+        m.remove(i);
     }
     let end = precise_time_ns();
     end - start
 }
 
 fn main(){
-    // datapoints are the loads 0.3,0.4,0.5,0.6,0.7,0.8,0.9 calculated with 40000
-    let data_point:Vec<int> = vec!(12000,16000,20000,24000,28000,32000,36000);
-    let mut result_hopscotch:Vec<u64> = Vec::with_capacity(7);
-    let mut result_robin:Vec<u64> = Vec::with_capacity(7);
+    // datapoints are the loads 0.3,0.4,0.5,0.6,0.7,0.8,0.9 calculated with 131072
+    let data_point:Vec<uint> = vec!(9830,11469,13107,14746,16384,18022,19660,21299,22937,24576,26214);
+    let mut result_hopscotch:Vec<u64> = Vec::with_capacity(12);
+    let mut result_robin:Vec<u64> = Vec::with_capacity(12);
+    let load_factor = vec!(0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8);
+    let mut it = 0;
     for i in data_point.iter(){
-        let time_hopscotch = insert_lookup_remove_hopscotch(*i);
+        println!("load factor:{}",*load_factor.get(it));
+        let mut sum = 0u64;
+        for _ in range(0,AVG_SIZE){
+            sum += insert_lookup_remove_hopscotch(*i,OPERATIONS);
+        }
+        let time_hopscotch = sum/AVG_SIZE;
         result_hopscotch.push(time_hopscotch);
-        let time_robin = insert_lookup_remove_robin(*i);
+        let mut sum2 = 0u64;
+        for _ in range(0,AVG_SIZE){
+            sum2 += insert_lookup_remove_robin(*i,OPERATIONS);
+        }
+        let time_robin = sum2/AVG_SIZE;
         result_robin.push(time_robin);
+        it += 1;
     }
     let mut file = File::create(&Path::new("output-files/bench-90lookup-5insert-5remove"));
-    let load_factor = vec!(0.3,0.4,0.5,0.6,0.7,0.8,0.9);
-    for i in range(0u,7u){
+    for i in range(0u,11u){
         let d = load_factor.get(i).to_str().append(" ");
         let h = result_hopscotch.get(i).to_str().append(" ");
         let r = result_robin.get(i).to_str().append("\n");

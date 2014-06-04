@@ -41,9 +41,18 @@ fn main(){
     let mut result_robin:Vec<u64> = Vec::with_capacity(7);
     // Datapoint for 1 iteration
     for i in data_point.iter(){
-        let time_hopscotch = insert_time_hopscotch(*i);
+        let mut sum = 0;
+        let nr_of_inserts = 500u64;
+        for _ in range(1,nr_of_inserts){
+            sum += insert_time_hopscotch(*i);
+        }
+        let time_hopscotch = sum/nr_of_inserts;
         result_hopscotch.push(time_hopscotch);
-        let time_robin = insert_time_robin(*i);
+        let mut sum2 = 0;
+        for _ in range(1,nr_of_inserts){
+            sum2 += insert_time_robin(*i);
+        }
+        let time_robin = sum2/nr_of_inserts;
         result_robin.push(time_robin);
     }
     let mut file = File::create(&Path::new("output-files/bench-insert-same-bucket"));
