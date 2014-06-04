@@ -1,4 +1,5 @@
 use std::clone::Clone;
+use std::option::{Option,None,Some};
 use std::cmp::Eq;
 use std::mem::replace;
 use std::cmp::max;
@@ -11,31 +12,29 @@ static INITIAL_LOG2_CAP: uint = 4;
 pub static INITIAL_CAPACITY: uint = 1 << INITIAL_LOG2_CAP; //2^5
 
 //Is not boxed, like structures are in Rust
-#[deriving(Show,Clone,Eq)]
+#[deriving(Show,Clone)]
 pub struct Bucket{
     pub hop_info: u32,
     pub hash:     u64
 }
 
-#[deriving(Show,Clone,Eq)]
+#[deriving(Show,Clone)]
 pub struct RawTable<K,V>{
     // Available elements
     capacity: uint,
     // Occupied elements
     //buckets:  Vec<Bucket>, //Contains hop info and hash
     buckets: Vec<Bucket>,
-    keys:     Vec<K>,
-    vals:     Vec<V>
+    keys:     Vec<Option<K>>,
+    vals:     Vec<Option<V>>
 }
 
-impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
+impl<K: Clone, V: Clone> RawTable<K,V>{
     pub fn new(cap: uint) -> RawTable<K,V>{
         let capacity = num::next_power_of_two(max(INITIAL_CAPACITY,cap));
         let bucket_vec = Vec::from_elem(capacity,Bucket{hop_info:0,hash:0});
-        let a:K = Default::default();
-        let keys_vec = Vec::from_elem(capacity,a);
-        let b:V = Default::default();
-        let vals_vec = Vec::from_elem(capacity,b);
+        let keys_vec = Vec::from_elem(capacity,None);
+        let vals_vec = Vec::from_elem(capacity,None);
         let ret = RawTable{
                       capacity: capacity,
                       buckets: bucket_vec,
@@ -51,18 +50,31 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
         self.buckets.get_mut(idx)
     }
     pub fn get_key<'a>(&'a self,idx:uint)->&'a K{
-        self.keys.get(idx)
+        match *self.keys.get(idx) {
+            Some(ref k) => k,
+            None => fail!("We suck at rawtable keys")
+        }
     }
     pub fn get_val<'a>(&'a self,idx:uint)->&'a V{
-        self.vals.get(idx)
+        match *self.vals.get(idx) {
+            Some(ref v) => v,
+            None => fail!("We suck at rawtable values")
+        }
+    }
+    pub fn get_key_option(&self,idx:uint)->bool{
+        match *self.keys.get(idx) {
+            Some(_) => true,
+            None => false
+        }
     }
     pub fn insert_key(&mut self,idx:uint,elem:K){
-        *self.keys.get_mut(idx) = elem;
+        *self.keys.get_mut(idx) = Some(elem);
         //replace(self.keys.get_mut(idx),elem);
     }
     pub fn insert_val(&mut self,idx:uint,elem:V){
-        replace(self.vals.get_mut(idx),elem);
+        replace(self.vals.get_mut(idx),Some(elem));
     }
+    /*
     pub fn resize(&mut self)->bool{
         // Check if table can be resized, return false if it can't
         let new_capacity = self.capacity << 1;
@@ -106,7 +118,7 @@ impl<K: Default + Clone, V: Default + Clone> RawTable<K,V>{
             info = info >> 1;
         }
         true
-    }
+    }*/
     pub fn capacity(&self)->uint{
         self.capacity
     }

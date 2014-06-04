@@ -1,0 +1,63 @@
+#![feature(default_type_params)]
+extern crate rand;
+extern crate time;
+extern crate collections;
+
+use collections::HashMap;
+use time::precise_time_ns;
+
+#[path="../../hashmap/mod.rs"]
+mod hopscotch;
+#[path="../../hashmap/raw_table/mod.rs"]
+mod raw_table;
+#[path="../hashers.rs"]
+mod hashers;
+
+fn main(){
+    let mut m = hopscotch::HashMap::with_capacity(100);
+    for i in range(1,10){
+        m.insert(i,i+1);
+    }
+    let start_hopscotch = precise_time_ns();
+    for i in range(1,10){
+        m.lookup(i);
+    }
+    let end_hopscotch = precise_time_ns();
+    let time_hopscotch = end_hopscotch-start_hopscotch;
+    println!("time elapsed hopscotch:{}",time_hopscotch);
+    let mut rh = HashMap::with_capacity(100);
+    for i in range(1,10){
+        rh.insert(i,i+1);
+    }
+    let start_robin = precise_time_ns();
+    for i in range(1,10){
+        rh.find(&i);
+    }
+    let end_robin = precise_time_ns();
+    let time_robin = end_robin-start_robin;
+    println!("time elapsed robin hood:{}",time_robin);
+    let h = hashers::HasherSameBucket::new(23,256);
+    let mut m2 = hopscotch::HashMap::with_capacity_and_hasher(200,h);
+    for i in range(1,30){
+        m2.insert(i,i+1);
+    }
+    let start_hopscotch2 = precise_time_ns();
+    for i in range(1,30){
+        m.lookup(i);
+    }
+    let end_hopscotch2 = precise_time_ns();
+    let time_hopscotch2 = end_hopscotch2-start_hopscotch2;
+    println!("time elapsed hopscotch same bucket:{}",time_hopscotch2);
+    let h2 = hashers::HasherSameBucket::new(23,256);
+    let mut rh2 = HashMap::with_capacity_and_hasher(200,h);
+    for i in range(1,30){
+        rh2.insert(i,i+1);
+    }
+    let start_robin2 = precise_time_ns();
+    for i in range(1,30){
+        m.lookup(i);
+    }
+    let end_robin2 = precise_time_ns();
+    let time_robin2 = end_robin2-start_robin2;
+    println!("time elapsed robin same bucket:{}",time_robin2);
+}

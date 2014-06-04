@@ -1,7 +1,7 @@
 use std::hash::{Hasher,Hash};
 use std::io::IoResult;
 
-struct HasherZeroAndUp;
+pub struct HasherZeroAndUp;
 
 impl Hasher<HashZeroAndUp> for HasherZeroAndUp{
     fn hash<T:Hash<HashZeroAndUp>>(&self,value:&T)->u64{

@@ -1,7 +1,6 @@
 #![feature(default_type_params)]
-extern crate rand;
 //use rand::Rng;
-use rand::Rng;
+use std::rand::{task_rng,Rng};
 use std::cmp::max;
 use std::default::Default;
 use std::clone::Clone;
@@ -16,7 +15,7 @@ pub mod raw_table;
 
 
 //ADD_RANGE - 
-pub static ADD_RANGE: uint = 256;
+pub static ADD_RANGE: uint = 512;
 pub static VIRTUAL_BUCKET_CAPACITY: uint = 32;
 
 #[deriving(Clone)]
@@ -27,7 +26,7 @@ pub struct HashMap<K, V, H = sip::SipHasher>{
 }
 
 
-impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> HashMap<K,V,H>{
+impl<K: Hash<S> + Default + Clone, V: Default + Clone, S, H: Hasher<S>> HashMap<K,V,H>{
     //Private help functions
 
 	//hust at decrement size ved remove
@@ -54,13 +53,13 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 		let new_hash = self.hasher.hash(&key);
 		let mask = self.raw_table.capacity()-1u;
 		let index_addr = (new_hash as uint) & mask;
-		let (hop_info,_) = self.get_bucket_info(index_addr);
+		let hop_info = self.raw_table.get_bucket(index_addr).hop_info.clone();
 		let mut info = 1u32;
 
 		for i in range(0u, VIRTUAL_BUCKET_CAPACITY){
 			if info & hop_info >= 1u32{
 		        let mut addr = (index_addr+i) & mask;
-				let (_, check_hash) = self.get_bucket_info(addr);
+				let check_hash = self.raw_table.get_bucket(addr).hash.clone();
 				if(new_hash == check_hash){
                     {
                     let remove_bucket = self.raw_table.get_bucket(index_addr);
@@ -82,7 +81,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
         //println!("Lookup hashes to: {}",new_hash)
         let mask = self.raw_table.capacity()-1u;
 		let index_addr: uint = (new_hash as uint) & mask;
-        let (mut hop_info,_) = self.get_bucket_info(index_addr);
+        let mut hop_info = self.raw_table.get_i_bucket(index_addr).hop_info.clone();
 
 		for i in range(0u, VIRTUAL_BUCKET_CAPACITY){
             //println!("hop info:{}",hop_info);
@@ -90,7 +89,7 @@ impl<K: Hash<S> + Eq + Default + Clone, V: Default + Clone, S, H: Hasher<S>> Has
 				//Might need some optimization. Might be able to use new_bucket instead which
 				//is memory efficient.
                 //println!("i:{}",i);
-			    let (_,check_hash) = self.get_bucket_info((index_addr + i) & mask);
+			    let check_hash = self.raw_table.get_i_bucket((index_addr + i) & mask).hash.clone();
 				if(new_hash == check_hash){
 					return Some(self.get_return_value((index_addr+i) & mask));
 				}
@@ -113,7 +112,8 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:&uint, mask:uint)->K{
 
 	//used to displace a bucket nearer to the start_bucket of insert()
 	pub fn find_closer_bucket(&mut self, free_distance:&mut uint, index_addr:uint, val:&mut int, mask:uint)->uint{
-		let ( mut move_info, old_hash) = self.get_bucket_info(((index_addr + *free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask);
+		let mut move_info = self.raw_table.get_bucket(((index_addr + *free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).hop_info.clone();
+		let old_hash = self.raw_table.get_bucket(((index_addr + *free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).hash.clone();
         //println!("free distance in closer bucket:{}",*free_distance);
 		let mut free_dist = VIRTUAL_BUCKET_CAPACITY-1u;
 		while(0 < free_dist){
@@ -196,20 +196,26 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:&uint, mask:uint)->K{
         //println!("Insert hashes to: {}",new_hash)
 		let mask = self.raw_table.capacity()-1;
 		let index_addr = mask & (new_hash as uint);
-		let mut info = self.get_insert_bucket_info(index_addr,mask);
-		//let (mut info,_) = self.get_bucket_info(index_addr);
+		//let mut info = self.get_insert_bucket_info(index_addr,mask);
+        //let mut info = self.raw_table.get_bucket(index_addr).hop_info.clone();
         let mut free_distance = 0u;
 		let mut val = 1;
-		for i in range(1,  ADD_RANGE){
-			if (info & 1) == 0 {
-				break;
-			}
-			info = info >> 1;
-			let (b_info, _) = self.get_bucket_info((index_addr+i) & mask);
-            info = info | b_info;
-            //println!("info in insert: {}",info);
-			free_distance += 1;
-		}
+		//for i in range(1,  ADD_RANGE){
+		//	if (info & 1) == 0 {
+		//		break;
+		//	}
+		//	info = info >> 1;
+		//	let b_info = self.raw_table.get_bucket((index_addr+i) & mask).hop_info.clone();
+        //    info = info | b_info;
+        //    //println!("info in insert: {}",info);
+		//	free_distance += 1;
+		//}
+        for i in range(0,ADD_RANGE){
+            if !self.raw_table.get_key_option((index_addr+i) & mask) {
+                break;
+            }
+            free_distance += 1;
+        }
         //println!("free_distance in insert: {}",free_distance);
 		if free_distance < ADD_RANGE {
 			while val != 0 {
@@ -241,6 +247,7 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:&uint, mask:uint)->K{
     }
 
     pub fn resize(&mut self){
+        println!("Resize!!!");
         let new_capacity = self.raw_table.capacity() << 1;
         //println!("new capacity:{}",new_capacity);
         let old_table = replace(&mut self.raw_table,raw_table::RawTable::new(new_capacity));
@@ -276,13 +283,13 @@ fn get_sec_keys(&mut self, index_addr:uint, mfd:&uint, mask:uint)->K{
     }
 }
 
-impl<K:Hash+Eq+Default+Clone,V:Default+Clone> HashMap<K,V,sip::SipHasher>{
+impl<K:Hash+Default+Clone,V:Default+Clone> HashMap<K,V,sip::SipHasher>{
     pub fn new() -> HashMap<K,V,sip::SipHasher>{
         HashMap::with_capacity(INITIAL_CAPACITY)
     }
 
     pub fn with_capacity(capacity: uint) -> HashMap<K,V,sip::SipHasher>{
-        let mut r = rand::task_rng();
+        let mut r = task_rng();
         let r0 = r.gen();
         let r1 = r.gen();
         let hasher = sip::SipHasher::new_with_keys(r0, r1);
