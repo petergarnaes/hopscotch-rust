@@ -4,7 +4,7 @@ set term png
 set output "plot-60lookup-20insert-20remove.png"
 set title "60% lookup 20% insert 20% remove benchmark"
 set xlabel "Load factor"
-set ylabel "Time (ns)"
+set ylabel "ops / ms"
 set xtics 0.25,.05,0.85
 set xrange [0.25:0.85]
 set mxtics 1
