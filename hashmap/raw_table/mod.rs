@@ -1,10 +1,9 @@
+#![allow(dead_code)]
 use std::clone::Clone;
 use std::option::{Option,None,Some};
-use std::cmp::Eq;
 use std::mem::replace;
 use std::cmp::max;
 use std::num;
-use std::default::Default;
 use std::vec::Vec;
 
 pub static VIRTUAL_BUCKET_CAPACITY: uint = 32;

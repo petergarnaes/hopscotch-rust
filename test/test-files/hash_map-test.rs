@@ -25,7 +25,7 @@ mod test_hopscotch{
             (r:&mut hopscotch::raw_table::RawTable<K,V>,key:K,val:V,hash:u64){
         let raw_address = hash & ((r.capacity()-1u) as u64);
         {
-            let mut b = r.get_bucket(raw_address as uint);
+            let b = r.get_bucket(raw_address as uint);
             b.hash = hash;
             b.hop_info = 1;
         }
@@ -41,8 +41,8 @@ mod test_hopscotch{
         let key = 5;
         let val = 6;
         // Configure raw table
-        let hash = hash_with_hasher(m.getSipHasher(),&key);
-        insert_key_val_in_raw_table(m.getRawTable(),key,val,hash);
+        let hash = hash_with_hasher(m.get_siphasher(),&key);
+        insert_key_val_in_raw_table(m.get_rawtable(),key,val,hash);
         let op = m.lookup(key);
         match op{
             Some(var) => assert!(*var == val),
@@ -69,20 +69,20 @@ mod test_hopscotch{
         let key = 60;
         let val = 567;
         m.insert(key,val);
-        let hash = m.getSipHasher().hash(&key);
-        let r = m.getRawTable();
+        let hash = m.get_siphasher().hash(&key);
+        let r = m.get_rawtable();
         let raw_address = hash & ((r.capacity()-1u) as u64);
         assert!(*r.get_key((raw_address as uint)) == key);
         assert!(*r.get_val((raw_address as uint)) == val);
         // Try with many randomly generated numbers
         let mut m2:HashMap<uint,uint> = HashMap::with_capacity(500);
         let mut rng = task_rng();
-        for i in range(0u,200u){
+        for _ in range(0u,200u){
             let key2 = rng.gen();
             let val2 = rng.gen();
             m2.insert(key2,val2);
-            let hash2 = m2.getSipHasher().hash(&key2); 
-            let r2 = m2.getRawTable();
+            let hash2 = m2.get_siphasher().hash(&key2); 
+            let r2 = m2.get_rawtable();
             let raw_address2 = hash2 & ((r2.capacity()-1) as u64);
             // Check if bucket has only one element placed at the raw address
             if r2.get_bucket((raw_address2 as uint)).hop_info == 1{

@@ -1,5 +1,3 @@
-#![feature(default_type_params)]
-//use rand::Rng;
 use std::rand::{task_rng,Rng};
 use std::cmp::max;
 use std::default::Default;
@@ -7,7 +5,6 @@ use std::clone::Clone;
 use std::hash::{Hash, Hasher, sip};
 use std::mem::replace;
 use std::num;
-use std::iter::range_step;
 use std::option::{Option, Some, None};
 use raw_table::VIRTUAL_BUCKET_CAPACITY;
 use raw_table::INITIAL_CAPACITY;
@@ -16,7 +13,7 @@ pub mod raw_table;
 
 //ADD_RANGE - 
 pub static ADD_RANGE: uint = 512;
-pub static VIRTUAL_BUCKET_CAPACITY: uint = 32;
+//pub static VIRTUAL_BUCKET_CAPACITY: uint = 32;
 
 #[deriving(Clone)]
 pub struct HashMap<K, V, H = sip::SipHasher>{
@@ -31,12 +28,12 @@ impl<K: Hash<S> + Default + Clone, V: Default + Clone, S, H: Hasher<S>> HashMap<
 
 	//hust at decrement size ved remove
     
-	fn get_bucket_info(&self, index_addr:uint)->(u32, u64) {
+	/*fn get_bucket_info(&self, index_addr:uint)->(u32, u64) {
 		let b = self.raw_table.get_i_bucket(index_addr);
 		let x = b.hop_info.clone();
 		let y = b.hash.clone();
 		(x,y)
-	}
+	}*/
 	
 	//fn change_bucket_info(&mut self, index_addr:uint)
 
@@ -58,9 +55,9 @@ impl<K: Hash<S> + Default + Clone, V: Default + Clone, S, H: Hasher<S>> HashMap<
 
 		for i in range(0u, VIRTUAL_BUCKET_CAPACITY){
 			if info & hop_info >= 1u32{
-		        let mut addr = (index_addr+i) & mask;
+		        let addr = (index_addr+i) & mask;
 				let check_hash = self.raw_table.get_bucket(addr).hash.clone();
-				if(new_hash == check_hash){
+				if new_hash == check_hash {
                     self.raw_table.get_bucket(index_addr).hop_info -= info;
                     let ret_val = self.raw_table.get_val(addr).clone();
                     //*self.raw_table.get_mut_val(addr) = None;
@@ -89,7 +86,7 @@ impl<K: Hash<S> + Default + Clone, V: Default + Clone, S, H: Hasher<S>> HashMap<
 				//is memory efficient.
                 //println!("i:{}",i);
 			    let check_hash = self.raw_table.get_i_bucket((index_addr + i) & mask).hash.clone();
-				if(new_hash == check_hash){
+				if new_hash == check_hash {
 					return Some(self.get_return_value((index_addr+i) & mask));
 				}
 			}
@@ -116,7 +113,7 @@ fn get_sec_keys(&mut self, index_addr:uint,mfd:uint, free_distance:&uint, mask:u
         //println!("move_info:{}",move_info);
         //println!("free distance in closer bucket:{}",*free_distance);
 		let mut free_dist = VIRTUAL_BUCKET_CAPACITY-1u;
-		while(0 < free_dist){
+		while 0 < free_dist {
 			let start_hop_info = move_info;
 			let mut move_free_distance = -1;
 			let mut mask2 = 1u;
@@ -127,10 +124,10 @@ fn get_sec_keys(&mut self, index_addr:uint,mfd:uint, free_distance:&uint, mask:u
 				}
                 mask2 = mask2 << 1;
 			}
-		if(move_free_distance != -1){
+		if move_free_distance != -1 {
             //println!("Bobby plz!");
-			if(start_hop_info == move_info){
-				self.raw_table.get_bucket(((index_addr+*free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).hop_info = (move_info | (1<< free_dist));
+			if start_hop_info == move_info {
+				self.raw_table.get_bucket(((index_addr+*free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).hop_info = move_info | (1<< free_dist);
 
 				// Vi har et problem med pointers her. raw_table.get_val 
                 // returnere en &data og ikke en data. For at kunne gøre dette 
@@ -152,10 +149,10 @@ fn get_sec_keys(&mut self, index_addr:uint,mfd:uint, free_distance:&uint, mask:u
 				//}
 				
                 //println!("move_free_distance{}",move_free_distance);
-				self.raw_table.get_bucket(((index_addr+*free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).hop_info -= (1<<move_free_distance);
+				self.raw_table.get_bucket(((index_addr+*free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).hop_info -= 1<<move_free_distance;
 				//println!("free dist:{}",free_dist);
 				*free_distance = *free_distance - free_dist;
-				return (move_free_distance as uint);
+				return move_free_distance as uint;
 				}
 			}
             iter += 1;
@@ -165,24 +162,6 @@ fn get_sec_keys(&mut self, index_addr:uint,mfd:uint, free_distance:&uint, mask:u
 		*val = 0;
 		return 0u;
 	}
-
-	//Insert skal anvende move_free_distance når den skal finde sine buckets. I starten af funktionen skal denne
-	//sættes til 0, hvorefter den vil blive opdateret når find_closer_buckets kaldes.
-
-	//Supporting function used in insert. Used to lookup whether or not
-	//the current key exist or not.
-
-    fn get_insert_bucket_info(&mut self,addr:uint,mask:uint) -> u32{
-        let start_addr = (addr-(VIRTUAL_BUCKET_CAPACITY-1)) & mask;
-        let mut info = self.raw_table.get_bucket(start_addr).hop_info.clone();
-        let mut i = 1;
-        while i < VIRTUAL_BUCKET_CAPACITY {
-            info = info >> 1;
-            info = info | self.raw_table.get_bucket((start_addr+i) & mask).hop_info;
-            i += 1;
-        }
-        info
-    }
 
 	fn check_key(&self, key:&K)->bool{
 		match self.lookup(key.clone()) {
@@ -227,7 +206,7 @@ fn get_sec_keys(&mut self, index_addr:uint,mfd:uint, free_distance:&uint, mask:u
                     //println!("info:{}",info);
                     //println!("index address:{}",index_addr);
                     //println!("free distance at insert:{}",free_distance);
-                    self.raw_table.get_bucket(index_addr).hop_info |= (1<<free_distance);
+                    self.raw_table.get_bucket(index_addr).hop_info |= 1<<free_distance;
 					//println!("address:{}",(index_addr + free_distance) & mask);
 					self.raw_table.get_bucket((index_addr + free_distance) & 
                                                         mask).hash = new_hash;
@@ -248,6 +227,7 @@ fn get_sec_keys(&mut self, index_addr:uint,mfd:uint, free_distance:&uint, mask:u
 	    self.resize();
 		self.insert(key.clone(), data.clone())
     }
+    #[allow(dead_code)]
     pub fn insert_resize(&mut self, key:K, data:V,add_range:uint)-> bool{
 		if self.check_key(&key) {
 			return false;
@@ -284,7 +264,7 @@ fn get_sec_keys(&mut self, index_addr:uint,mfd:uint, free_distance:&uint, mask:u
                     //println!("info:{}",info);
                     //println!("index address:{}",index_addr);
                     //println!("free distance at insert:{}",free_distance);
-                    self.raw_table.get_bucket(index_addr).hop_info |= (1<<free_distance);
+                    self.raw_table.get_bucket(index_addr).hop_info |= 1<<free_distance;
 					//println!("address:{}",(index_addr + free_distance) & mask);
 					self.raw_table.get_bucket((index_addr + free_distance) & 
                                                         mask).hash = new_hash;
@@ -320,13 +300,14 @@ fn get_sec_keys(&mut self, index_addr:uint,mfd:uint, free_distance:&uint, mask:u
         }
     }
   
-    pub fn getRawTable<'a>(&'a mut self)->&'a mut raw_table::RawTable<K,V>{
+    pub fn get_rawtable<'a>(&'a mut self)->&'a mut raw_table::RawTable<K,V>{
         &mut self.raw_table
     }
-    pub fn getSipHasher<'a>(&'a self)->&'a H{
+    pub fn get_siphasher<'a>(&'a self)->&'a H{
         &self.hasher
     }
 
+    #[allow(dead_code)]
     pub fn with_hasher(hasher:H)->HashMap<K,V,H>{
         HashMap::with_capacity_and_hasher(INITIAL_CAPACITY,hasher)
     }
