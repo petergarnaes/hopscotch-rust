@@ -15,7 +15,7 @@ pub mod raw_table;
 
 
 //ADD_RANGE - 
-pub static ADD_RANGE: uint = 256;
+pub static ADD_RANGE: uint = 512;
 pub static VIRTUAL_BUCKET_CAPACITY: uint = 32;
 
 #[deriving(Clone)]
@@ -249,7 +249,61 @@ fn get_sec_keys(&mut self, index_addr:uint,mfd:uint, free_distance:&uint, mask:u
 	    self.resize();
 		self.insert(key.clone(), data.clone())
     }
-
+    pub fn insert_resize(&mut self, key:K, data:V,add_range:uint)-> bool{
+		if self.check_key(&key) {
+			return false;
+		}
+		let new_hash = self.hasher.hash(&key);
+        //println!("Insert hashes to: {}",new_hash)
+		let mask = self.raw_table.capacity()-1;
+		let index_addr = mask & (new_hash as uint);
+		//let mut info = self.get_insert_bucket_info(index_addr,mask);
+        //let mut info = self.raw_table.get_bucket(index_addr).hop_info.clone();
+        let mut free_distance = 0u;
+		let mut val = 1;
+		//for i in range(1,  ADD_RANGE){
+		//	if (info & 1) == 0 {
+		//		break;
+		//	}
+		//	info = info >> 1;
+		//	let b_info = self.raw_table.get_bucket((index_addr+i) & mask).hop_info.clone();
+        //    info = info | b_info;
+        //    //println!("info in insert: {}",info);
+		//	free_distance += 1;
+		//}
+        for i in range(0,add_range){
+            if !self.raw_table.get_key_option((index_addr+i) & mask) {
+                break;
+            }
+            free_distance += 1;
+        }
+        //println!("free_distance in insert: {}",free_distance);
+		if free_distance < add_range {
+			while val != 0 {
+				if free_distance < VIRTUAL_BUCKET_CAPACITY {
+                    //assert!(start_info & (1<<free_distance) != 0); 
+                    //println!("info:{}",info);
+                    //println!("index address:{}",index_addr);
+                    //println!("free distance at insert:{}",free_distance);
+                    self.raw_table.get_bucket(index_addr).hop_info |= (1<<free_distance);
+					//println!("address:{}",(index_addr + free_distance) & mask);
+					self.raw_table.get_bucket((index_addr + free_distance) & 
+                                                        mask).hash = new_hash;
+					self.raw_table.insert_key((index_addr + free_distance) & 
+                                                                    mask, key.clone());
+					self.raw_table.insert_val((index_addr + free_distance) & 
+                                                                    mask, data.clone());
+					self.size += 1;
+					return true;
+                    
+				}
+                //println!("free distance before closer bucket:{}",free_distance);
+				self.find_closer_bucket(&mut free_distance, index_addr, &mut val, mask);
+                //println!("free distance after closer bucket:{}",free_distance);
+			}
+		}
+        false
+    }
     pub fn resize(&mut self){
         println!("Resize!!!");
         let new_capacity = self.raw_table.capacity() << 1;
