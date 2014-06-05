@@ -61,6 +61,9 @@ impl<K: Clone, V: Clone> RawTable<K,V>{
             None => fail!("We suck at rawtable values")
         }
     }
+    pub fn get_mut_val<'a>(&'a mut self,idx:uint)->&'a mut Option<V>{
+        self.vals.get_mut(idx)
+    }
     pub fn get_key_option(&self,idx:uint)->bool{
         match *self.keys.get(idx) {
             Some(_) => true,

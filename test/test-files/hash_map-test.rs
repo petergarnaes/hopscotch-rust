@@ -130,7 +130,7 @@ mod test_hopscotch{
         for i in range(1u,upper){
             let op = m.remove(i);
             match op {
-                Some(var) => assert!(*var == i+2),
+                Some(var) => assert!(var == i+2),
                 None => fail!("remove doesn't work!")
             }
         }

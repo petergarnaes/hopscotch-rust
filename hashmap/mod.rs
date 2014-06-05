@@ -49,7 +49,7 @@ impl<K: Hash<S> + Default + Clone, V: Default + Clone, S, H: Hasher<S>> HashMap<
 		self.size -= 1;
 	}
 	
-	pub fn remove<'a>(&'a mut self, key:K)->Option<&'a V>{
+	pub fn remove<'a>(&'a mut self, key:K)->Option<V>{
 		let new_hash = self.hasher.hash(&key);
 		let mask = self.raw_table.capacity()-1u;
 		let index_addr = (new_hash as uint) & mask;
@@ -61,12 +61,11 @@ impl<K: Hash<S> + Default + Clone, V: Default + Clone, S, H: Hasher<S>> HashMap<
 		        let mut addr = (index_addr+i) & mask;
 				let check_hash = self.raw_table.get_bucket(addr).hash.clone();
 				if(new_hash == check_hash){
-                    {
-                    let remove_bucket = self.raw_table.get_bucket(index_addr);
-                    remove_bucket.hop_info = remove_bucket.hop_info - info;
-					}
+                    self.raw_table.get_bucket(index_addr).hop_info -= info;
+                    let ret_val = self.raw_table.get_val(addr).clone();
+                    *self.raw_table.get_mut_val(index_addr) = None;
                     self.decrement_size();
-                    return Some(self.get_return_value(addr));
+                    return Some(ret_val);
 				}
 			}
             info = info << 1;
