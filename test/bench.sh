@@ -6,7 +6,7 @@ for file in *
 do
     [ -f "$file" ] || continue
     case "$file" in
-        *.rs)
+        .rs$)
             rustc $file
         ;;
         *)
@@ -35,7 +35,7 @@ for file in *
 do
     [ -f "$file" ] || continue
     case "$file" in
-        *.sh)
+        .sh)
             ./$file
         ;;
         *)

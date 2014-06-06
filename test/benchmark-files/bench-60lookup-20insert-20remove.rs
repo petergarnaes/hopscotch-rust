@@ -69,14 +69,14 @@ fn main(){
             sum += insert_lookup_remove_hopscotch(*i,OPERATIONS);
         }
         let sum_nano = (sum as f64)/(AVG_SIZE as f64);
-        let time_hopscotch = ((OPERATIONS as f64)/(sum_nano))*1000000f64;
+        let time_hopscotch = (((OPERATIONS*5) as f64)/(sum_nano))*1000000f64;
         result_hopscotch.push(time_hopscotch);
         let mut sum2 = 0u64;
         for _ in range(0,AVG_SIZE){
             sum2 += insert_lookup_remove_robin(*i,OPERATIONS);
         }
         let sum_nano2 = (sum2 as f64)/(AVG_SIZE as f64);
-        let time_robin = ((OPERATIONS as f64)/(sum_nano2))*1000000f64;
+        let time_robin = (((OPERATIONS*5) as f64)/(sum_nano2))*1000000f64;
         result_robin.push(time_robin);
         it += 1;
     }

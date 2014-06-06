@@ -38,10 +38,12 @@ impl<K: Hash<S> + Default + Clone, V: Default + Clone, S, H: Hasher<S>> HashMap<
 	//fn change_bucket_info(&mut self, index_addr:uint)
 
 
+    #[inline(always)]
 	fn get_return_value<'a>(&'a self, addr:uint)->&'a V{
 		self.raw_table.get_val(addr)
 	}
 
+    #[inline(always)]
 	fn decrement_size(&mut self){
 		self.size -= 1;
 	}
@@ -97,16 +99,19 @@ impl<K: Hash<S> + Default + Clone, V: Default + Clone, S, H: Hasher<S>> HashMap<
     }
 
 //used to get the value of the displacing bucket
+#[inline(always)]
 fn get_sec_vals(&mut self, index_addr:uint, mfd:uint, free_distance:&uint, mask:uint)->V{
 	self.raw_table.get_val(((index_addr+mfd+*free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).clone()
 }
 
 //used to get the key of the displacing bucket
+#[inline(always)]
 fn get_sec_keys(&mut self, index_addr:uint,mfd:uint, free_distance:&uint, mask:uint)->K{
 	self.raw_table.get_key(((index_addr+mfd+*free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).clone()
 }
 
 	//used to displace a bucket nearer to the start_bucket of insert()
+    #[inline(always)]
 	pub fn find_closer_bucket(&mut self, free_distance:&mut uint, index_addr:uint, val:&mut int, mask:uint)->uint{
         let mut iter = 0;
 		let mut move_info = self.raw_table.get_bucket(((index_addr + *free_distance) - (VIRTUAL_BUCKET_CAPACITY-1)) & mask).hop_info.clone();
@@ -163,6 +168,7 @@ fn get_sec_keys(&mut self, index_addr:uint,mfd:uint, free_distance:&uint, mask:u
 		return 0u;
 	}
 
+    #[inline(always)]
 	fn check_key(&self, key:&K)->bool{
 		match self.lookup(key.clone()) {
 			Some(_) => return true,
