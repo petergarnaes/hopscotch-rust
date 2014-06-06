@@ -23,8 +23,8 @@ fn main(){
     let mut m = hopscotch::HashMap::with_capacity_and_hasher(64,h);
     for i in range(1,35){
         m.insert(i,i+1);
-        for j in range(0u,m.getRawTable().capacity()){
-            let rawtable = m.getRawTable();
+        for j in range(0u,m.get_rawtable().capacity()){
+            let rawtable = m.get_rawtable();
             let bucket = rawtable.get_i_bucket(j);
             let key = rawtable.get_key(j);
             let val = rawtable.get_val(j);
@@ -41,7 +41,7 @@ fn main(){
             }
         }
     }
-    let rawtable = m.getRawTable();
+    let rawtable = m.get_rawtable();
     for j in range(1u,64u){
         let bucket = rawtable.get_i_bucket(j);
         let key = rawtable.get_key(j);

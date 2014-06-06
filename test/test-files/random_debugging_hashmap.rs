@@ -22,7 +22,7 @@ fn main(){
 				//println!("Ur insert is fkd")
 			}
             for j in range(0u ,64){
-			    let rawtable = m.getRawTable();
+			    let rawtable = m.get_rawtable();
                 let bucket = rawtable.get_i_bucket(j);
                 let key = rawtable.get_key(j);
                 let val = rawtable.get_val(j);
@@ -62,7 +62,7 @@ fn main(){
         //    };
         //    println!("Hop info: {}",m.getRawTable().get_bucket(1).hop_info);
         //}
-		let rawtable = m.getRawTable();
+		let rawtable = m.get_rawtable();
 		for j in range(0u ,64){
 			let bucket = rawtable.get_i_bucket(j);
             let key = rawtable.get_key(j);
