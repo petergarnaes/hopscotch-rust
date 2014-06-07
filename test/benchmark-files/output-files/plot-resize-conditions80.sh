@@ -2,7 +2,7 @@
 /usr/bin/gnuplot <<\__EOF
 set term png
 set output "plot-resize-conditions80.png"
-set title "Resize % with different add ranges and table sizes"
+set title "Resize % with a load factor of 80%"
 set xlabel "Add range"
 set ylabel "Resize %"
 set style data histogram 
