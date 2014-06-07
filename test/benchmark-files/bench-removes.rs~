@@ -16,9 +16,10 @@ mod hashers;
 
 //static HASHMAP_CAPACITY:uint = 32768;
 //static HASHMAP_CAPACITY:uint = 4096;
-static HASHMAP_CAPACITY:uint = 10000;
+static HASHMAP_CAPACITY:uint = 80000;
 static OPERATIONS:u64 = 500;
 static AVG_SIZE:u64 = 10;
+static Hash_OH: f64 = 152;
 
 fn insert_lookup_remove_robin(load:uint)->u64{
     let mut m = HashMap::with_capacity(HASHMAP_CAPACITY);
@@ -58,14 +59,14 @@ fn main(){
             sum += insert_lookup_remove_hopscotch(*i);
         }
         let sum_nano = (sum as f64)/(AVG_SIZE as f64);
-        let time_hopscotch = (sum_nano as f64)/(*i as f64);
+        let time_hopscotch = (sum_nano as f64)/(*i as f64) - Hash_OH;
         result_hopscotch.push(time_hopscotch);
         let mut sum2 = 0u64;
         for _ in range(0,AVG_SIZE){
             sum2 += insert_lookup_remove_robin(*i);
         }
         let sum_nano2 = (sum2 as f64)/(AVG_SIZE as f64);
-        let time_robin = (sum_nano2 as f64) / (*i as f64);
+        let time_robin = (sum_nano2 as f64) / (*i as f64) - Hash_OH;
         result_robin.push(time_robin);
     }
 

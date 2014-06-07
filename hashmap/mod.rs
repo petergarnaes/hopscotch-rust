@@ -229,7 +229,6 @@ fn get_sec_keys(&mut self, index_addr:uint,mfd:uint, free_distance:&uint, mask:u
                     
 				}
                 //println!("free distance before closer bucket:{}",free_distance);
-				println!("displacing T_T");
 				self.find_closer_bucket(&mut free_distance, index_addr, &mut val, mask);
                 //println!("free distance after closer bucket:{}",free_distance);
 			}
