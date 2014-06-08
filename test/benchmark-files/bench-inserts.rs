@@ -16,7 +16,7 @@ mod hashers;
 
 //static HASHMAP_CAPACITY:uint = 32768;
 //static HASHMAP_CAPACITY:uint = 4096;
-static HASHMAP_CAPACITY:uint = 60000;
+static HASHMAP_CAPACITY:uint = 80000;
 static AVG_SIZE:u64 = 10;
 static Hash_OH: f64 = 152f64;
 
