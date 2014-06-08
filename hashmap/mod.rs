@@ -61,6 +61,7 @@ impl<K: Hash<S> + Default + Clone, V: Default + Clone, S, H: Hasher<S>> HashMap<
 				let check_hash = self.raw_table.get_bucket(addr).hash.clone();
 				if new_hash == check_hash {
                     self.raw_table.get_bucket(index_addr).hop_info -= info;
+                    self.raw_table.delete_key(index_addr);
                     let ret_val = self.raw_table.get_val(addr).clone();
                     //*self.raw_table.get_mut_val(addr) = None;
                     self.decrement_size();

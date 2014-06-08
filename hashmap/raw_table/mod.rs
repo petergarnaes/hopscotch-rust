@@ -73,6 +73,9 @@ impl<K: Clone, V: Clone> RawTable<K,V>{
         *self.keys.get_mut(idx) = Some(elem);
         //replace(self.keys.get_mut(idx),elem);
     }
+    pub fn delete_key(&mut self,idx:uint){
+        *self.keys.get_mut(idx) = None;
+    }
     pub fn insert_val(&mut self,idx:uint,elem:V){
         replace(self.vals.get_mut(idx),Some(elem));
     }
