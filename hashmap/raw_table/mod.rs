@@ -51,13 +51,13 @@ impl<K: Clone, V: Clone> RawTable<K,V>{
     pub fn get_key<'a>(&'a self,idx:uint)->&'a K{
         match *self.keys.get(idx) {
             Some(ref k) => k,
-            None => fail!("We suck at rawtable keys")
+            None => fail!("We suck at rawtable keys:{}",idx)
         }
     }
     pub fn get_val<'a>(&'a self,idx:uint)->&'a V{
         match *self.vals.get(idx) {
             Some(ref v) => v,
-            None => fail!("We suck at rawtable values")
+            None => fail!("We suck at rawtable values:{}",idx)
         }
     }
     pub fn get_mut_val<'a>(&'a mut self,idx:uint)->&'a mut Option<V>{

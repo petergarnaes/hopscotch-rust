@@ -14,13 +14,12 @@ mod hashers;
 
 fn main(){
     let mut m:HashMap<int,int> = hopscotch::HashMap::with_capacity(60000);
-    for i in range(1,40000){
+    for i in range(1,50000){
         m.insert(i,i);
-    }
-    for i in range(1,40000){
-        match m.lookup(i) {
-            Some(j) => assert!(i == *j),
-            None => println!("Fuck life:{}",i)
+        match m.lookup(i){
+            //Some(j) => println!("j:{}",*j),
+            Some(j) => (),
+            None => println!("lookup failed at i:{}",i)
         }
     }
 }
