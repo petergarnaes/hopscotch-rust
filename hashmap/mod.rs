@@ -167,12 +167,15 @@ impl<K: Hash<S> + Default + Clone, V: Default + Clone, S, H: Hasher<S>> HashMap<
                     let virtual_bucket_lock = self.raw_table.get_bucket_lock(index_addr);
                     let virtual_bucket = virtual_bucket_lock.write();
                     virtual_bucket.hop_info |= 1<<free_distance;
-					self.raw_table.get_bucket((index_addr + free_distance) & 
-                                                        mask).hash = new_hash;
+                    drop(virtual_bucket);
+                    let insert_bucket_lock = self.raw_table.get_bucket_lock((index_addr + free_distance) & mask);
+                    let insert_bucket = insert_bucket_lock.write();
+					insert_bucket.hash = new_hash;
+                    drop(insert_bucket);
 					self.raw_table.insert_key((index_addr + free_distance) & 
-                                                                    mask, key.clone());
+                                                            mask, key.clone());
 					self.raw_table.insert_val((index_addr + free_distance) & 
-                                                                    mask, data.clone());
+                                                            mask, data.clone());
 					self.size += 1;
 					return true;
                     
@@ -188,7 +191,6 @@ impl<K: Hash<S> + Default + Clone, V: Default + Clone, S, H: Hasher<S>> HashMap<
     pub fn resize(&mut self){
         println!("Resize!!!");
         let new_capacity = self.raw_table.capacity() << 1;
-        //println!("new capacity:{}",new_capacity);
         let old_table = replace(&mut self.raw_table,raw_table::RawTable::new(new_capacity));
         let old_capacity = old_table.capacity();
         let mut info = 0;
