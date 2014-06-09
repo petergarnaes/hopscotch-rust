@@ -89,7 +89,7 @@ impl<K: Clone, V: Clone> RawTable<K,V>{
     pub fn insert_val(&mut self,idx:uint,elem:V){
         replace(self.vals.get_mut(idx),Some(elem));
     }
-	//returns the max capacity of the hash table.
+
     pub fn capacity(&self)->uint{
         self.capacity
     }
